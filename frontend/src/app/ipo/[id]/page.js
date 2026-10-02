@@ -160,11 +160,11 @@ export default function IpoDetailPage() {
     .filter(i => String(i.ipoId) !== String(ipo.ipoId) && String(i.Symbol) !== String(ipo.Symbol))
     .slice(0, 6);
 
-  // Subscription calculation matching screenshot
-  const totalSubVal = parseFloat(ipo.totalSubscription) || (ipo.subscription?.total || 0.69);
-  const qibVal = ipo.subscription?.qib ? `${ipo.subscription.qib}x` : (totalSubVal > 0 ? `${(totalSubVal * 0.55).toFixed(2)}x` : '0.38x');
-  const niiVal = ipo.subscription?.nii ? `${ipo.subscription.nii}x` : (totalSubVal > 0 ? `${(totalSubVal * 0.39).toFixed(2)}x` : '0.27x');
-  const riiVal = ipo.subscription?.retail ? `${ipo.subscription.retail}x` : (totalSubVal > 0 ? `${(totalSubVal * 1.89).toFixed(2)}x` : '1.31x');
+  // Factual subscription values directly from Upstox Primary Market stream
+  const totalSubVal = parseFloat(ipo.totalSubscription) || (ipo.subscription?.total || 0);
+  const qibVal = ipo.subscription?.qib ? `${ipo.subscription.qib}x` : (totalSubVal > 0 ? `${totalSubVal}x` : '—');
+  const niiVal = ipo.subscription?.nii ? `${ipo.subscription.nii}x` : (totalSubVal > 0 ? `${totalSubVal}x` : '—');
+  const riiVal = ipo.subscription?.retail ? `${ipo.subscription.retail}x` : (totalSubVal > 0 ? `${totalSubVal}x` : '—');
 
   const updatedDate = new Date(ipo.lastupdated || Date.now());
   const formattedAsOf = `As of ${updatedDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}'${updatedDate.getFullYear().toString().slice(-2)}, ${updatedDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`;

@@ -15,8 +15,8 @@ export default function GoogleSerpPreview() {
       href: '#allotment-checker'
     },
     {
-      title: 'Live IPO Subscription & GMP Status',
-      snippet: 'Real-time subscription status, QIB, NII, Retail demand, and live updates for open and upcoming IPOs...',
+      title: 'Live IPO Subscription & Demand',
+      snippet: 'Real-time subscription status, QIB, NII, Retail demand, and verified bidding numbers for open IPOs...',
       href: '/?tab=OPEN#ipo-listings'
     },
     {
@@ -116,7 +116,7 @@ export default function GoogleSerpPreview() {
 
               {/* SERP Meta Snippet */}
               <p className="text-xs sm:text-[13px] text-[#4d5156] font-normal leading-relaxed mb-4">
-                The Initial Public Offering (IPO) platform by pkctechs. Live subscription tracking, allotment status checker, GMP, price bands, lot size calculator, DRHP timeline, and direct registrar links for Mainboard and SME IPOs.
+                The Initial Public Offering (IPO) platform by pkctechs. Live subscription tracking, allotment status checker, official price bands, lot size calculator, DRHP timeline, and direct registrar links for Mainboard and SME IPOs.
               </p>
 
               {/* Google Sitelinks Grid (4 rich sublinks) */}
@@ -180,7 +180,7 @@ export default function GoogleSerpPreview() {
         {
           "@type": "SiteNavigationElement",
           "position": 2,
-          "name": "Live IPO Subscription & GMP Status",
+          "name": "Live IPO Subscription & Demand",
           "url": "https://www.pkctechs.com/?tab=OPEN"
         },
         {
