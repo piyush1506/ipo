@@ -1,0 +1,187 @@
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
+
+export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activeTab }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleNavClick = (tabId, hash) => {
+    setMobileMenuOpen(false);
+    if (tabId === 'ALLOTMENT') {
+      if (pathname === '/') {
+        const el = document.getElementById('allotment-checker');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        router.push('/#allotment-checker');
+      }
+      return;
+    }
+
+    if (pathname === '/' && onSelectTab) {
+      onSelectTab(tabId);
+      if (typeof window !== 'undefined') {
+        const el = document.getElementById('ipo-listings') || document.getElementById('tab-container');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    } else {
+      router.push(`/?tab=${tabId}#ipo-listings`);
+    }
+  };
+
+  const navLinks = [
+    { id: 'OPEN', label: 'Open IPOs', hasPulse: true },
+    { id: 'UPCOMING', label: 'Upcoming', hasPulse: false },
+    { id: 'CLOSED', label: 'Recently Listed', hasPulse: false },
+    { id: 'SME', label: 'SME Issues', hasPulse: false },
+    { id: 'ALLOTMENT', label: 'Allotment Status', hasPulse: false },
+  ];
+
+  return (
+    <header className="sticky top-0 z-[100] bg-white border-b border-slate-200/80 shadow-2xs backdrop-blur-md">
+      <div className="max-w-[1240px] mx-auto px-5 h-[64px] flex items-center justify-between gap-6">
+        {/* Brand Logo */}
+        <Link
+          href="/"
+          onClick={(e) => {
+            if (pathname === '/' && onSelectTab) {
+              e.preventDefault();
+              onSelectTab('OPEN');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
+          className="flex items-center gap-2.5 no-underline group shrink-0"
+        >
+          <div className="w-8 h-8 rounded-lg bg-slate-600 flex items-center justify-center text-white shadow-2xs group-hover:bg-slate-700 transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+              <polyline points="16 7 22 7 22 13" />
+            </svg>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-bold text-slate-900 tracking-tight">
+                pkc<span className="text-slate-500 font-medium">techs</span>
+              </span>
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider">
+                IPO
+              </span>
+            </div>
+          </div>
+        </Link>
+
+        {/* Global Search Bar */}
+        <div className="hidden md:flex flex-1 max-w-[380px] relative items-center">
+          <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={searchQuery || ''}
+            onChange={(e) => {
+              if (pathname !== '/' && e.target.value) {
+                router.push(`/?search=${encodeURIComponent(e.target.value)}#ipo-listings`);
+              } else if (onSearchChange) {
+                onSearchChange(e.target.value);
+              }
+            }}
+            placeholder="Search IPOs, companies, symbols (e.g. VNL, NITYAS)..."
+            className="w-full h-9 pl-9.5 pr-4 rounded-lg border border-slate-200 bg-slate-50/80 text-sm text-slate-800 placeholder:text-slate-400 font-normal outline-none transition-all focus:border-slate-500 focus:bg-white focus:ring-2 focus:ring-slate-500/15"
+          />
+        </div>
+
+        {/* Desktop Navigation Links */}
+        <nav className="hidden md:flex items-center gap-5">
+          {navLinks.map((item) => {
+            const isActive = pathname === '/' && activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavClick(item.id, `#${item.id.toLowerCase()}-ipos`)}
+                className={`text-sm flex items-center gap-1.5 py-1 transition-colors cursor-pointer bg-transparent border-none ${
+                  isActive ? 'font-bold text-slate-900 border-b-2 border-slate-700' : 'font-normal text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {item.hasPulse && <span className="pulse-live"></span>}
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Live Indicator & Mobile Menu Button */}
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 font-normal">
+            <span className="pulse-live"></span>
+            <span>Real-time Feed</span>
+          </div>
+
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+            aria-label="Toggle navigation menu"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {mobileMenuOpen ? (
+                <path d="M18 6 6 18M6 6l12 12" />
+              ) : (
+                <path d="M4 12h16M4 6h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Dropdown Drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white border-t border-slate-200 px-5 py-4 flex flex-col gap-3">
+          {/* Mobile Search */}
+          <div className="relative mb-1">
+            <input
+              type="text"
+              value={searchQuery || ''}
+              onChange={(e) => {
+                if (pathname !== '/' && e.target.value) {
+                  router.push(`/?search=${encodeURIComponent(e.target.value)}#ipo-listings`);
+                } else if (onSearchChange) {
+                  onSearchChange(e.target.value);
+                }
+              }}
+              placeholder="Search IPOs..."
+              className="w-full h-9 pl-4 pr-4 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800"
+            />
+          </div>
+
+          {navLinks.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleNavClick(item.id, `#${item.id.toLowerCase()}-ipos`)}
+              className={`text-sm text-left py-1.5 flex items-center gap-2 cursor-pointer bg-transparent border-none ${
+                pathname === '/' && activeTab === item.id ? 'font-bold text-slate-900' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {item.hasPulse && <span className="pulse-live"></span>}
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </header>
+  );
+}

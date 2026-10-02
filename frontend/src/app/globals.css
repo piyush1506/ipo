@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+/* =========================================================
+   Soft Slate & Gray Design System — Light & Medium Neutral Edition
+   Clean, Elegant, Low-Contrast, Pleasant Grayscale Interface
+   ========================================================= */
+
+:root {
+  --gray-900: #38383c; /* Slate 800 for high-contrast text */
+  --gray-700: #505055; /* Slate 700 for subtitles */
+  --gray-600: #68686c; /* Slate 600 for primary medium-gray accents/buttons */
+  --gray-500: #808084; /* Slate 500 for secondary text */
+  --gray-400: #98989c; /* Slate 400 for borders & hints */
+  --gray-300: #b0b0b4; /* Slate 300 */
+  --gray-200: #c8c8cc; /* Slate 200 light borders */
+  --gray-100: #F1F5F9; /* Slate 100 soft surface */
+  --gray-50:  #F8FAFC; /* Slate 50 soft background */
+  --border-light: #E2E8F0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #F8FAFC;
+  color: #334155;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* Custom Soft Minimalist Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Soft Slate Minimalist Card */
+.groww-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(100, 116, 139, 0.04), 0 1px 2px rgba(100, 116, 139, 0.02);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.groww-card:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 8px 24px -4px rgba(100, 116, 139, 0.09), 0 2px 6px -1px rgba(100, 116, 139, 0.03);
+  transform: translateY(-2px);
+}
+
+/* Table Row Hover */
+.groww-table-row {
+  background: #FFFFFF;
+  border-bottom: 1px solid #F1F5F9;
+  transition: background-color 0.15s ease;
+}
+
+.groww-table-row:hover {
+  background-color: #F8FAFC;
+}
+
+/* Soft Slate Primary Action Button (Refined Medium Gray, Not Pitch Dark) */
+.btn-dark-primary {
+  background-color: #475569;
+  color: #FFFFFF;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+  border: 1px solid #475569;
+  box-shadow: 0 1px 2px rgba(71, 85, 105, 0.12);
+}
+
+.btn-dark-primary:hover {
+  background-color: #334155;
+  border-color: #334155;
+  box-shadow: 0 3px 10px rgba(71, 85, 105, 0.18);
+  transform: translateY(-1px);
+}
+
+.btn-dark-primary:active {
+  transform: scale(0.98);
+}
+
+/* Light Gray Outline Button */
+.btn-gray-outline {
+  background-color: #FFFFFF;
+  color: #334155;
+  border: 1px solid #CBD5E1;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-gray-outline:hover {
+  background-color: #F1F5F9;
+  border-color: #94A3B8;
+  color: #1E293B;
+}
+
+/* Tab Pill Button — Soft Gray */
+.groww-tab {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.groww-tab.active {
+  background-color: #475569;
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(71, 85, 105, 0.18);
+  border: 1px solid #475569;
+}
+
+.groww-tab:not(.active) {
+  background-color: #FFFFFF;
+  color: #64748B;
+  border: 1px solid #E2E8F0;
+}
+
+.groww-tab:not(.active):hover {
+  background-color: #F8FAFC;
+  color: #334155;
+  border-color: #CBD5E1;
+}
+
+/* Quick Filter Chip — Soft Light Gray Active */
+.filter-chip {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filter-chip.active {
+  background-color: #E2E8F0;
+  color: #1E293B;
+  border: 1px solid #94A3B8;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(100, 116, 139, 0.08);
+}
+
+.filter-chip:not(.active) {
+  background-color: #FFFFFF;
+  color: #64748B;
+  border: 1px solid #E2E8F0;
+}
+
+.filter-chip:not(.active):hover {
+  background-color: #F8FAFC;
+  color: #334155;
+  border-color: #CBD5E1;
+}
+
+/* Live Market Status Pulse Dot */
+@keyframes livePulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.pulse-live {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #10B981;
+  animation: livePulse 2s infinite;
+}
+
+/* Soft Slate Pulse Dot */
+@keyframes grayPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(100, 116, 139, 0.5); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 5px rgba(100, 116, 139, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(100, 116, 139, 0); }
+}
+
+.pulse-gray {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #64748B;
+  animation: grayPulse 2s infinite;
+}
+
+/* Toast Animation */
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-toast {
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Skeleton Loading in Soft Light Gray */
+.skeleton {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
