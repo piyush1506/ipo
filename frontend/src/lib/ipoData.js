@@ -1,5 +1,10 @@
 // Dynamic Upstox IPO Data Service (100% Dynamic - Zero Mock / Zero Hardcoded Data)
 
+const getApiBase = () => {
+  if (typeof window !== 'undefined') return '';
+  return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+};
+
 export async function fetchAllIPOs(filters = {}) {
   try {
     const params = new URLSearchParams();
@@ -8,7 +13,8 @@ export async function fetchAllIPOs(filters = {}) {
     if (filters.search) params.append('search', filters.search);
 
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const url = typeof window !== 'undefined' ? `/api/ipos${qs}` : `http://localhost:5000/api/ipos${qs}`;
+    const base = getApiBase();
+    const url = `${base}/api/ipos${qs}`;
     
     const res = await fetch(url, { cache: 'no-store' });
     if (res.ok) {
@@ -25,7 +31,8 @@ export async function fetchAllIPOs(filters = {}) {
 
 export async function fetchIPODetails(id) {
   try {
-    const url = typeof window !== 'undefined' ? `/api/ipos/${id}` : `http://localhost:5000/api/ipos/${id}`;
+    const base = getApiBase();
+    const url = `${base}/api/ipos/${id}`;
     const res = await fetch(url, { cache: 'no-store' });
     if (res.ok) {
       const json = await res.json();

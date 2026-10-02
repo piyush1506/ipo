@@ -38,7 +38,8 @@ export default async function sitemap() {
 
   let ipoRoutes = [];
   try {
-    const res = await fetch('http://localhost:5000/api/ipos', { next: { revalidate: 3600 } });
+    const apiBase = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+    const res = await fetch(`${apiBase}/api/ipos`, { next: { revalidate: 3600 } });
     if (res.ok) {
       const data = await res.json();
       const ipos = Array.isArray(data) ? data : (data.data || []);
