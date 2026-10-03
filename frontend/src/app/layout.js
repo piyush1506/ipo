@@ -1,5 +1,7 @@
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import "./globals.css";
+import CookieBanner from '../components/CookieBanner';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -145,30 +147,23 @@ export default function RootLayout({ children }) {
           {
             '@type': 'SiteNavigationElement',
             'position': 1,
-            'name': 'How to Check IPO Allotment Status?',
-            'description': 'Direct step-by-step guide and links to check allotment status with PAN number on Link Intime, KFintech, and Bigshare.',
-            'url': `${siteUrl}/#allotment-checker`,
+            'name': 'IPO GMP Today & Expected Listing Gains',
+            'description': 'Track today\'s live Grey Market Premium (GMP), expected listing price, profit per lot, and Kostak rates for Mainboard & SME IPOs.',
+            'url': `${siteUrl}/?tab=OPEN`,
           },
           {
             '@type': 'SiteNavigationElement',
-            'position': 2,
+            'position': 3,
             'name': 'Live IPO Subscription & Demand',
             'description': 'Real-time subscription status, QIB, NII, Retail demand, and live updates for active IPOs.',
             'url': `${siteUrl}/?tab=OPEN`,
           },
           {
             '@type': 'SiteNavigationElement',
-            'position': 3,
+            'position': 4,
             'name': 'IPO Dashboard (Mainboard & SME)',
             'description': 'Explore all open, upcoming, and closed Mainboard and SME IPOs on NSE and BSE with full details.',
             'url': `${siteUrl}/?tab=ALL`,
-          },
-          {
-            '@type': 'SiteNavigationElement',
-            'position': 4,
-            'name': 'Upcoming IPOs Calendar & Dates',
-            'description': 'Upcoming IPO pipeline, expected opening dates, price bands, lot sizes, and issue amounts.',
-            'url': `${siteUrl}/?tab=UPCOMING`,
           },
           {
             '@type': 'SiteNavigationElement',
@@ -183,36 +178,44 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <html lang="en" className={inter.variable}>
-      <head>
-        {/* Google tag (gtag.js) */}
-        <script
-          async
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className={inter.className} style={{ margin: 0, padding: 0 }} suppressHydrationWarning>
+        {children}
+        <CookieBanner />
+
+        {/* Google Analytics (gtag.js) */}
+        <Script
+          strategy="afterInteractive"
           src="https://www.googletagmanager.com/gtag/js?id=G-8TEVCHMFE9"
         />
-        <script
+        <Script
+          id="google-gtag-init"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', 'G-8TEVCHMFE9');
+              gtag('config', 'G-8TEVCHMFE9', { page_path: window.location.pathname });
             `,
           }}
         />
+
         {/* Google AdSense */}
-        <script
-          async
+        <Script
+          id="google-adsense"
+          strategy="afterInteractive"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9516698796421486"
           crossOrigin="anonymous"
         />
-        <script
+
+        {/* JSON-LD Structured Data for Google SEO */}
+        <Script
+          id="schema-structured-data"
           type="application/ld+json"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
-      </head>
-      <body className={inter.className} style={{ margin: 0, padding: 0 }}>
-        {children}
       </body>
     </html>
   );

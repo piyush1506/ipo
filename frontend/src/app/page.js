@@ -3,11 +3,10 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import IpoCard from '../components/IpoCard';
+import IpoCardSkeleton from '../components/IpoCardSkeleton';
 import IpoTableView from '../components/IpoTableView';
-import AllotmentChecker from '../components/AllotmentChecker';
-import GoogleSerpPreview from '../components/GoogleSerpPreview';
 import Footer from '../components/Footer';
-import { fetchAllIPOs, formatCurrency, formatCrores, getDaysRemainingBadge, getBrandPalette } from '../lib/ipoData';
+import { fetchAllIPOs, getCachedIPOs, formatCurrency, formatCrores, getDaysRemainingBadge, getBrandPalette } from '../lib/ipoData';
 
 function HomeContent() {
   const router = useRouter();
@@ -29,15 +28,15 @@ function HomeContent() {
   // FAQ state
   const [openFaq, setOpenFaq] = useState(null);
 
-  // Listen to searchParams (e.g. ?tab=UPCOMING or ?search=VNL from Navbar links)
+  // Sync state with URL params on client navigation
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam && ['OPEN', 'UPCOMING', 'CLOSED', 'SME', 'ALL'].includes(tabParam.toUpperCase())) {
-      setActiveTab(tabParam.toUpperCase());
+      setActiveTab((prev) => (prev !== tabParam.toUpperCase() ? tabParam.toUpperCase() : prev));
     }
     const searchParam = searchParams.get('search');
     if (searchParam !== null) {
-      setSearchQuery(searchParam);
+      setSearchQuery((prev) => (prev !== searchParam ? searchParam : prev));
     }
   }, [searchParams]);
 
@@ -58,7 +57,29 @@ function HomeContent() {
 
   // Real-time automatic data stream: initial load + 20s interval + window focus refresh
   useEffect(() => {
-    loadIpos(true);
+    let isMounted = true;
+
+    // Instantly check memory/session cache on mount
+    const cached = getCachedIPOs();
+    if (cached.length > 0) {
+      setIpos(cached);
+      setLoading(false);
+    }
+
+    const loadInitialData = async () => {
+      try {
+        const data = await fetchAllIPOs();
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setIpos(data);
+        }
+      } catch (err) {
+        console.error('Error fetching initial IPOs:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadInitialData();
 
     const interval = setInterval(() => {
       loadIpos(false);
@@ -78,6 +99,7 @@ function HomeContent() {
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
+      isMounted = false;
       clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -426,7 +448,7 @@ function HomeContent() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="h-64 bg-white rounded-2xl border border-slate-200 p-5 skeleton" />
+              <IpoCardSkeleton key={i} />
             ))}
           </div>
         ) : filteredIpos.length > 0 ? (
@@ -460,12 +482,6 @@ function HomeContent() {
             </button>
           </div>
         )}
-
-        {/* 5. Direct Allotment Checker Hub */}
-        <AllotmentChecker ipos={ipos} />
-
-        {/* 6. Google Search Engine Simulation / SERP Preview */}
-        <GoogleSerpPreview />
 
         {/* 7. FAQ Section */}
         <section className="mt-10">

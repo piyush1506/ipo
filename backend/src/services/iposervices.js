@@ -19,20 +19,35 @@ async function fetchUpstoxIpoDetails(ipoId, headers) {
   try {
     const res = await axios.get(`${UPSTOX_API_BASE}/ipos/${ipoId}`, {
       headers,
-      timeout: 8000
+      timeout: 6000
     });
     return res.data?.data || null;
   } catch (err) {
-    console.warn(`Upstox details fetch skipped for ${ipoId}:`, err.message);
     return null;
   }
 }
 
 /**
- * Synchronize all IPOs from Upstox API (Open, Upcoming, Closed) into MongoDB
+ * Helper to process array in concurrent batches
+ */
+async function mapConcurrent(items, limit, fn) {
+  const results = [];
+  for (let i = 0; i < items.length; i += limit) {
+    const chunk = items.slice(i, i + limit);
+    const chunkResults = await Promise.allSettled(chunk.map(fn));
+    for (const r of chunkResults) {
+      if (r.status === 'fulfilled') results.push(r.value);
+    }
+  }
+  return results;
+}
+
+/**
+ * Synchronize all IPOs from Upstox API (Open, Upcoming, Closed) into MongoDB with Parallel Concurrency
  */
 async function SyncIPOs() {
-  console.log('Starting Upstox IPO synchronization...');
+  const startTime = Date.now();
+  console.log('[Sync] Starting optimized parallel Upstox IPO synchronization...');
   const headers = getUpstoxHeaders();
   if (!headers) {
     console.error('UPSTOX_ACCESS_TOKEN is not configured.');
@@ -41,35 +56,32 @@ async function SyncIPOs() {
 
   try {
     const [openRes, upcomingRes, closedRes] = await Promise.allSettled([
-      axios.get(`${UPSTOX_API_BASE}/ipos`, { headers, timeout: 10000 }),
-      axios.get(`${UPSTOX_API_BASE}/ipos?status=upcoming`, { headers, timeout: 10000 }),
-      axios.get(`${UPSTOX_API_BASE}/ipos?status=closed`, { headers, timeout: 10000 })
+      axios.get(`${UPSTOX_API_BASE}/ipos`, { headers, timeout: 8000 }),
+      axios.get(`${UPSTOX_API_BASE}/ipos?status=upcoming`, { headers, timeout: 8000 }),
+      axios.get(`${UPSTOX_API_BASE}/ipos?status=closed`, { headers, timeout: 8000 })
     ]);
 
     const openList = openRes.status === 'fulfilled' && openRes.value.data?.data ? openRes.value.data.data : [];
     const upcomingList = upcomingRes.status === 'fulfilled' && upcomingRes.value.data?.data ? upcomingRes.value.data.data : [];
     const closedList = closedRes.status === 'fulfilled' && closedRes.value.data?.data ? closedRes.value.data.data : [];
 
-    // Tag initial status
     const allBasic = [
       ...openList.map(i => ({ ...i, inferredStatus: 'Open' })),
       ...upcomingList.map(i => ({ ...i, inferredStatus: 'Upcoming' })),
       ...closedList.map(i => ({ ...i, inferredStatus: 'Closed' }))
     ];
 
-    console.log(`Found ${allBasic.length} total IPOs from Upstox (Open: ${openList.length}, Upcoming: ${upcomingList.length}, Closed: ${closedList.length}).`);
+    console.log(`[Sync] Found ${allBasic.length} total IPOs from Upstox. Fetching details in parallel batches...`);
 
-    let savedCount = 0;
-
-    for (const basic of allBasic) {
+    // Fetch details in parallel batches of 8 items concurrently
+    const detailedIpos = await mapConcurrent(allBasic, 8, async (basic) => {
       const id = basic.id || basic.symbol;
-      if (!id) continue;
+      if (!id) return null;
 
-      // Fetch deep details for timeline, registrar, lot size, etc.
       const detail = await fetchUpstoxIpoDetails(id, headers);
       const source = detail || basic;
 
-      const ipoData = {
+      return {
         ipoId: String(id),
         Symbol: source.symbol || basic.symbol || '',
         companyName: source.name || basic.name || id,
@@ -120,19 +132,28 @@ async function SyncIPOs() {
         source: 'upstox',
         lastupdated: new Date()
       };
+    });
 
-      await Ipo.findOneAndUpdate(
-        { ipoId: ipoData.ipoId },
-        { $set: ipoData },
-        { upsert: true, new: true }
-      );
-      savedCount++;
+    const validIpos = detailedIpos.filter(Boolean);
+
+    // Bulk upsert into MongoDB using bulkWrite for maximum speed
+    if (require('mongoose').connection.readyState === 1 && validIpos.length > 0) {
+      const ops = validIpos.map(ipoData => ({
+        updateOne: {
+          filter: { ipoId: ipoData.ipoId },
+          update: { $set: ipoData },
+          upsert: true
+        }
+      }));
+      await Ipo.bulkWrite(ops, { ordered: false });
     }
 
-    console.log(`Successfully synced ${savedCount} Upstox IPOs to MongoDB.`);
+    const elapsed = Date.now() - startTime;
+    console.log(`[Sync] Successfully synced ${validIpos.length} Upstox IPOs in ${elapsed}ms.`);
     return {
       success: true,
-      count: savedCount,
+      count: validIpos.length,
+      elapsedMs: elapsed,
       source: 'upstox'
     };
   } catch (error) {
@@ -153,9 +174,9 @@ async function fetchDirectUpstoxList() {
 
   try {
     const [openRes, upcomingRes, closedRes] = await Promise.allSettled([
-      axios.get(`${UPSTOX_API_BASE}/ipos`, { headers, timeout: 8000 }),
-      axios.get(`${UPSTOX_API_BASE}/ipos?status=upcoming`, { headers, timeout: 8000 }),
-      axios.get(`${UPSTOX_API_BASE}/ipos?status=closed`, { headers, timeout: 8000 })
+      axios.get(`${UPSTOX_API_BASE}/ipos`, { headers, timeout: 6000 }),
+      axios.get(`${UPSTOX_API_BASE}/ipos?status=upcoming`, { headers, timeout: 6000 }),
+      axios.get(`${UPSTOX_API_BASE}/ipos?status=closed`, { headers, timeout: 6000 })
     ]);
 
     const openList = openRes.status === 'fulfilled' && openRes.value.data?.data ? openRes.value.data.data : [];

@@ -72,7 +72,7 @@ export default function IpoDetailModal({ ipo, onClose }) {
   const niiVal = ipo.subscription?.nii ? `${ipo.subscription.nii}x` : (totalSubVal > 0 ? `${(totalSubVal * 0.39).toFixed(2)}x` : '0.24x');
   const riiVal = ipo.subscription?.retail ? `${ipo.subscription.retail}x` : (totalSubVal > 0 ? `${(totalSubVal * 1.89).toFixed(2)}x` : '0.85x');
 
-  const updatedDate = new Date(ipo.lastupdated || Date.now());
+  const updatedDate = ipo.lastupdated ? new Date(ipo.lastupdated) : (ipo.biddingStartDate ? new Date(ipo.biddingStartDate) : new Date('2026-01-01'));
   const formattedAsOf = `As of ${updatedDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}, ${updatedDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
 
   return (

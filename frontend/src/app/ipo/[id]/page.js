@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import IpoCard from '../../../components/IpoCard';
@@ -14,12 +15,14 @@ import {
   generateIpoEditorial,
   calculateLotTiers,
   getCategoryReservationList,
-  getBrandPalette
+  getBrandPalette,
+  getCachedIPOs
 } from '../../../lib/ipoData';
 
 export default function IpoDetailPage() {
   const params = useParams();
   const router = useRouter();
+
   const [ipo, setIpo] = useState(null);
   const [allIpos, setAllIpos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,18 +31,28 @@ export default function IpoDetailPage() {
   useEffect(() => {
     async function load() {
       if (!params?.id) return;
-      setLoading(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Instantly load from client cache if available
+      const initialCachedList = getCachedIPOs();
+      const initialFound = initialCachedList.find(i => 
+        String(i.ipoId).toLowerCase() === String(params.id).toLowerCase() || 
+        (i.Symbol && i.Symbol.toLowerCase() === String(params.id).toLowerCase())
+      );
+
+      if (initialFound) {
+        setIpo(initialFound);
+        setAllIpos(initialCachedList);
+        setLoading(false);
+      }
 
       try {
         const [detailData, listData] = await Promise.all([
           fetchIPODetails(params.id),
           fetchAllIPOs()
         ]);
-        setIpo(detailData);
-        if (Array.isArray(listData)) {
-          setAllIpos(listData);
-        }
+        if (detailData) setIpo(detailData);
+        if (Array.isArray(listData)) setAllIpos(listData);
       } catch (err) {
         console.error('Error loading IPO detail:', err);
       } finally {
@@ -72,10 +85,46 @@ export default function IpoDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
         <Navbar />
-        <div className="max-w-[960px] mx-auto my-12 w-full px-5">
-          <div className="h-96 bg-slate-50 border border-slate-200 rounded-2xl skeleton" />
+        <div className="max-w-[960px] mx-auto my-8 w-full px-5 space-y-6">
+          {/* Breadcrumb line */}
+          <div className="h-3 w-40 rounded skeleton" />
+
+          {/* Header Card Skeleton */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl skeleton shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-6 w-2/3 rounded-md skeleton" />
+                <div className="flex items-center gap-2">
+                  <div className="h-3.5 w-28 rounded skeleton" />
+                  <div className="h-3.5 w-16 rounded skeleton" />
+                </div>
+              </div>
+              <div className="w-20 h-6 rounded-md skeleton shrink-0" />
+            </div>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100">
+              {[1, 2, 3, 4].map(idx => (
+                <div key={idx} className="p-3 bg-slate-50 rounded-xl space-y-2">
+                  <div className="h-2.5 w-16 rounded skeleton" />
+                  <div className="h-5 w-24 rounded skeleton" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Body Content Skeleton */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-4">
+            <div className="h-5 w-48 rounded skeleton" />
+            <div className="space-y-2.5 pt-2">
+              <div className="h-3.5 w-full rounded skeleton" />
+              <div className="h-3.5 w-11/12 rounded skeleton" />
+              <div className="h-3.5 w-4/5 rounded skeleton" />
+            </div>
+          </div>
         </div>
         <Footer />
       </div>
@@ -166,7 +215,7 @@ export default function IpoDetailPage() {
   const niiVal = ipo.subscription?.nii ? `${ipo.subscription.nii}x` : (totalSubVal > 0 ? `${totalSubVal}x` : '—');
   const riiVal = ipo.subscription?.retail ? `${ipo.subscription.retail}x` : (totalSubVal > 0 ? `${totalSubVal}x` : '—');
 
-  const updatedDate = new Date(ipo.lastupdated || Date.now());
+  const updatedDate = ipo.lastupdated ? new Date(ipo.lastupdated) : (ipo.biddingStartDate ? new Date(ipo.biddingStartDate) : new Date('2026-01-01'));
   const formattedAsOf = `As of ${updatedDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}'${updatedDate.getFullYear().toString().slice(-2)}, ${updatedDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
 
   // JSON-LD Structured Data for Google SEO
@@ -217,10 +266,12 @@ export default function IpoDetailPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-800">
+    <div className="min-h-screen flex flex-col bg-white text-slate-800" suppressHydrationWarning>
       {/* Inject SEO JSON-LD Structured Data */}
-      <script
+      <Script
+        id={`ipo-schema-${ipo.ipoId || ipo.Symbol || 'detail'}`}
         type="application/ld+json"
+        strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdData) }}
       />
 

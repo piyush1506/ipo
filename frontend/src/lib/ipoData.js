@@ -1,49 +1,143 @@
-// Dynamic Upstox IPO Data Service (100% Dynamic - Zero Mock / Zero Hardcoded Data)
+// Dynamic Upstox IPO Data Service (Optimized with In-Memory Caching & SWR)
 
 const getApiBase = () => {
   if (typeof window !== 'undefined') return '';
   return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 };
 
-export async function fetchAllIPOs(filters = {}) {
-  try {
-    const params = new URLSearchParams();
-    if (filters.status && filters.status !== 'all') params.append('status', filters.status);
-    if (filters.type && filters.type !== 'all') params.append('type', filters.type);
-    if (filters.search) params.append('search', filters.search);
+// Client-side Memory Cache & Request Deduplication
+let memoryIpoCache = null;
+let memoryIpoTimestamp = 0;
+const memoryDetailsCache = new Map();
+const inFlightRequests = new Map();
+const CACHE_TTL = 30 * 1000; // 30 seconds
 
-    const qs = params.toString() ? `?${params.toString()}` : '';
-    const base = getApiBase();
-    const url = `${base}/api/ipos${qs}`;
-    
-    const res = await fetch(url, { cache: 'no-store' });
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        return json.data;
+export function getCachedIPOs() {
+  if (memoryIpoCache && (Date.now() - memoryIpoTimestamp < CACHE_TTL * 4)) {
+    return memoryIpoCache;
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = sessionStorage.getItem('pkc_ipos_cache');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          memoryIpoCache = parsed;
+          return parsed;
+        }
       }
-    }
-  } catch (err) {
-    console.error('Failed to fetch dynamic IPOs:', err.message);
+    } catch (e) {}
   }
   return [];
 }
 
-export async function fetchIPODetails(id) {
-  try {
-    const base = getApiBase();
-    const url = `${base}/api/ipos/${id}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && json.data) {
-        return json.data;
-      }
-    }
-  } catch (err) {
-    console.error(`Failed to fetch dynamic IPO details for ${id}:`, err.message);
+export async function fetchAllIPOs(filters = {}, forceRefresh = false) {
+  const hasFilters = Boolean((filters.status && filters.status !== 'all') || (filters.type && filters.type !== 'all') || filters.search);
+  const now = Date.now();
+
+  // If no specific filters and warm cache exists, return immediately
+  if (!hasFilters && !forceRefresh && memoryIpoCache && (now - memoryIpoTimestamp < CACHE_TTL)) {
+    return memoryIpoCache;
   }
-  return null;
+
+  const params = new URLSearchParams();
+  if (filters.status && filters.status !== 'all') params.append('status', filters.status);
+  if (filters.type && filters.type !== 'all') params.append('type', filters.type);
+  if (filters.search) params.append('search', filters.search);
+
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const base = getApiBase();
+  const url = `${base}/api/ipos${qs}`;
+
+  // Request deduplication: if identical request is already flying, reuse promise
+  if (inFlightRequests.has(url)) {
+    return inFlightRequests.get(url);
+  }
+
+  const fetchPromise = (async () => {
+    try {
+      const res = await fetch(url, {
+        cache: 'default',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          if (!hasFilters) {
+            memoryIpoCache = json.data;
+            memoryIpoTimestamp = Date.now();
+            if (typeof window !== 'undefined') {
+              try {
+                sessionStorage.setItem('pkc_ipos_cache', JSON.stringify(json.data));
+              } catch (e) {}
+            }
+          }
+          return json.data;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch dynamic IPOs:', err.message);
+    } finally {
+      inFlightRequests.delete(url);
+    }
+    // Fallback to cache if request fails
+    return memoryIpoCache || getCachedIPOs();
+  })();
+
+  inFlightRequests.set(url, fetchPromise);
+  return fetchPromise;
+}
+
+export async function fetchIPODetails(id, forceRefresh = false) {
+  if (!id) return null;
+  const key = String(id).toLowerCase();
+  const now = Date.now();
+
+  // Check details cache
+  if (!forceRefresh && memoryDetailsCache.has(key)) {
+    const cached = memoryDetailsCache.get(key);
+    if (now - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+  }
+
+  // Check if item exists in list cache
+  const cachedList = memoryIpoCache || getCachedIPOs();
+  const foundInList = cachedList.find(i => 
+    String(i.ipoId).toLowerCase() === key || 
+    (i.Symbol && i.Symbol.toLowerCase() === key)
+  );
+
+  const base = getApiBase();
+  const url = `${base}/api/ipos/${id}`;
+
+  if (inFlightRequests.has(url)) {
+    return inFlightRequests.get(url);
+  }
+
+  const fetchPromise = (async () => {
+    try {
+      const res = await fetch(url, {
+        cache: 'default',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          memoryDetailsCache.set(key, { data: json.data, timestamp: Date.now() });
+          return json.data;
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to fetch dynamic IPO details for ${id}:`, err.message);
+    } finally {
+      inFlightRequests.delete(url);
+    }
+    return foundInList || null;
+  })();
+
+  inFlightRequests.set(url, fetchPromise);
+  return foundInList || fetchPromise;
 }
 
 // Indian Rupee currency formatting for funds

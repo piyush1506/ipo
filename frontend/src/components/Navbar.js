@@ -8,15 +8,26 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleNavClick = (tabId, hash) => {
+  const handleNavClick = (tabId) => {
     setMobileMenuOpen(false);
-    if (tabId === 'ALLOTMENT') {
-      if (pathname === '/') {
-        const el = document.getElementById('allotment-checker');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        router.push('/#allotment-checker');
-      }
+
+    if (tabId === 'GUIDE') {
+      router.push('/ipo-guide');
+      return;
+    }
+
+    if (tabId === 'BLOG') {
+      router.push('/blog');
+      return;
+    }
+
+    if (tabId === 'ABOUT') {
+      router.push('/about');
+      return;
+    }
+
+    if (tabId === 'CONTACT') {
+      router.push('/contact');
       return;
     }
 
@@ -37,8 +48,8 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
     { id: 'OPEN', label: 'Open IPOs', hasPulse: true },
     { id: 'UPCOMING', label: 'Upcoming', hasPulse: false },
     { id: 'CLOSED', label: 'Recently Listed', hasPulse: false },
-    { id: 'SME', label: 'SME Issues', hasPulse: false },
-    { id: 'ALLOTMENT', label: 'Allotment Status', hasPulse: false },
+    { id: 'SME', label: 'SME Platform', hasPulse: false },
+    { id: 'BLOG', label: 'IPO Blog & Guides', hasPulse: false },
   ];
 
   return (
@@ -56,7 +67,7 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
           }}
           className="flex items-center gap-2.5 no-underline group shrink-0"
         >
-          <div className="w-8 h-8 rounded-lg bg-slate-600 flex items-center justify-center text-white shadow-2xs group-hover:bg-slate-700 transition-colors">
+          <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-white shadow-2xs group-hover:bg-slate-800 transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
               <polyline points="16 7 22 7 22 13" />
@@ -75,7 +86,7 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
         </Link>
 
         {/* Global Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-[380px] relative items-center">
+        <div className="hidden lg:flex flex-1 max-w-[340px] relative items-center">
           <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400">
             <svg
               width="15"
@@ -101,21 +112,25 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
                 onSearchChange(e.target.value);
               }
             }}
-            placeholder="Search IPOs, companies, symbols (e.g. VNL, NITYAS)..."
-            className="w-full h-9 pl-9.5 pr-4 rounded-lg border border-slate-200 bg-slate-50/80 text-sm text-slate-800 placeholder:text-slate-400 font-normal outline-none transition-all focus:border-slate-500 focus:bg-white focus:ring-2 focus:ring-slate-500/15"
+            placeholder="Search IPOs, companies..."
+            className="w-full h-9 pl-9.5 pr-4 rounded-lg border border-slate-200 bg-slate-50/80 text-xs text-slate-800 placeholder:text-slate-400 font-normal outline-none transition-all focus:border-slate-500 focus:bg-white focus:ring-2 focus:ring-slate-500/15"
           />
         </div>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-5">
+        <nav className="hidden md:flex items-center gap-4 lg:gap-5">
           {navLinks.map((item) => {
-            const isActive = pathname === '/' && activeTab === item.id;
+            const isActive =
+              (item.id === 'BLOG' && pathname.startsWith('/blog')) ||
+              (item.id === 'GUIDE' && pathname === '/ipo-guide') ||
+              (pathname === '/' && activeTab === item.id);
+
             return (
               <button
                 key={item.id}
-                onClick={() => handleNavClick(item.id, `#${item.id.toLowerCase()}-ipos`)}
-                className={`text-sm flex items-center gap-1.5 py-1 transition-colors cursor-pointer bg-transparent border-none ${
-                  isActive ? 'font-bold text-slate-900 border-b-2 border-slate-700' : 'font-normal text-slate-600 hover:text-slate-900'
+                onClick={() => handleNavClick(item.id)}
+                className={`text-xs font-medium flex items-center gap-1.5 py-1 transition-colors cursor-pointer bg-transparent border-none ${
+                  isActive ? 'font-bold text-slate-900 border-b-2 border-slate-700' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {item.hasPulse && <span className="pulse-live"></span>}
@@ -127,9 +142,22 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
 
         {/* Live Indicator & Mobile Menu Button */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 font-normal">
+          <Link
+            href="/about"
+            className="hidden xl:inline-block text-xs text-slate-500 hover:text-slate-800 transition-colors"
+          >
+            About
+          </Link>
+          <Link
+            href="/contact"
+            className="hidden xl:inline-block text-xs text-slate-500 hover:text-slate-800 transition-colors"
+          >
+            Contact
+          </Link>
+
+          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 font-normal">
             <span className="pulse-live"></span>
-            <span>Real-time Feed</span>
+            <span>Live Stream</span>
           </div>
 
           <button
@@ -164,22 +192,41 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
                 }
               }}
               placeholder="Search IPOs..."
-              className="w-full h-9 pl-4 pr-4 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800"
+              className="w-full h-9 pl-4 pr-4 rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-800"
             />
           </div>
 
           {navLinks.map((item) => (
             <button
               key={item.id}
-              onClick={() => handleNavClick(item.id, `#${item.id.toLowerCase()}-ipos`)}
-              className={`text-sm text-left py-1.5 flex items-center gap-2 cursor-pointer bg-transparent border-none ${
-                pathname === '/' && activeTab === item.id ? 'font-bold text-slate-900' : 'text-slate-600 hover:text-slate-900'
+              onClick={() => handleNavClick(item.id)}
+              className={`text-xs text-left py-2 flex items-center gap-2 cursor-pointer bg-transparent border-none ${
+                (pathname === '/' && activeTab === item.id) ||
+                (item.id === 'GUIDE' && pathname === '/ipo-guide') ||
+                (item.id === 'BLOG' && pathname.startsWith('/blog'))
+                  ? 'font-bold text-slate-900 bg-slate-50 px-2 rounded-md'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {item.hasPulse && <span className="pulse-live"></span>}
               {item.label}
             </button>
           ))}
+
+          <div className="pt-2 mt-2 border-t border-slate-100 flex flex-col gap-2 text-xs">
+            <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="text-slate-600 hover:text-slate-900 py-1">
+              About Us
+            </Link>
+            <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="text-slate-600 hover:text-slate-900 py-1">
+              Contact Support
+            </Link>
+            <Link href="/privacy-policy" onClick={() => setMobileMenuOpen(false)} className="text-slate-600 hover:text-slate-900 py-1">
+              Privacy Policy
+            </Link>
+            <Link href="/disclaimer" onClick={() => setMobileMenuOpen(false)} className="text-slate-600 hover:text-slate-900 py-1">
+              Financial Disclaimer
+            </Link>
+          </div>
         </div>
       )}
     </header>
