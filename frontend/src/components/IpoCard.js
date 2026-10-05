@@ -1,207 +1,229 @@
 'use client';
-import { formatCrores, formatCurrency, formatDate, getDaysRemainingBadge, getBrandPalette } from '../lib/ipoData';
+
+import {
+  ArrowRight,
+  CalendarBlank,
+  ChartBar,
+  ShareNetwork,
+  TrendUp,
+} from '@phosphor-icons/react';
+import { formatCrores, formatCurrency, formatDate, getDaysRemainingBadge } from '../lib/ipoData';
+
+const STATE_STYLES = {
+  open: {
+    card: 'border-emerald-100 border-l-emerald-600',
+    header: 'bg-emerald-50/80',
+    avatar: 'bg-emerald-700 text-white shadow-emerald-900/15',
+    badge: 'bg-emerald-700 text-white',
+    accentText: 'text-emerald-700',
+    icon: 'text-emerald-700 bg-emerald-100',
+    progress: 'bg-emerald-600',
+    button: 'bg-emerald-700 hover:bg-emerald-800 focus-visible:ring-emerald-500',
+  },
+  upcoming: {
+    card: 'border-amber-100 border-l-amber-500',
+    header: 'bg-amber-50/85',
+    avatar: 'bg-amber-600 text-white shadow-amber-900/15',
+    badge: 'bg-amber-100 text-amber-900 border border-amber-200',
+    accentText: 'text-amber-700',
+    icon: 'text-amber-700 bg-amber-100',
+    progress: 'bg-amber-500',
+    button: 'bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-500',
+  },
+  closed: {
+    card: 'border-blue-100 border-l-blue-600',
+    header: 'bg-blue-50/85',
+    avatar: 'bg-blue-700 text-white shadow-blue-900/15',
+    badge: 'bg-blue-100 text-blue-800 border border-blue-200',
+    accentText: 'text-blue-700',
+    icon: 'text-blue-700 bg-blue-100',
+    progress: 'bg-blue-600',
+    button: 'bg-blue-700 hover:bg-blue-800 focus-visible:ring-blue-500',
+  },
+};
 
 export default function IpoCard({ ipo, onViewDetails, onShare }) {
   const isSME = (ipo.issueType || '').toUpperCase() === 'SME';
-  const minPrice = ipo.priceband?.min || 0;
-  const maxPrice = ipo.priceband?.max || ipo.cutoffPrice || minPrice || 0;
-  const lotSize = ipo.lotsize || 0;
-  const minInvestment = (maxPrice > 0 && lotSize > 0) ? maxPrice * lotSize : 0;
-  const subscriptionNum = parseFloat(ipo.totalSubscription) || 0;
+  const minPrice = Number(ipo.priceband?.min || 0);
+  const maxPrice = Number(ipo.priceband?.max || ipo.cutoffPrice || minPrice || 0);
+  const lotSize = Number(ipo.lotsize || 0);
+  const minInvestment = maxPrice > 0 && lotSize > 0 ? maxPrice * lotSize : 0;
+  const subscriptionNum = Number.parseFloat(ipo.totalSubscription) || 0;
 
   const rawStatus = (ipo.status || 'Upcoming').toUpperCase();
-  const isClosed = rawStatus === 'CLOSED' || rawStatus === 'LISTED' || rawStatus === 'ALLOTTED';
+  const isClosed = ['CLOSED', 'LISTED', 'ALLOTTED'].includes(rawStatus);
   const isOpen = rawStatus === 'OPEN';
   const isUpcoming = rawStatus === 'UPCOMING';
-
+  const state = isClosed ? 'closed' : isOpen ? 'open' : 'upcoming';
+  const styles = STATE_STYLES[state];
   const daysBadge = getDaysRemainingBadge(ipo.opendate, ipo.closedate, ipo.status);
-  const brand = getBrandPalette(ipo.companyName || ipo.Symbol || 'IPO');
 
-  // Date range display
-  const openDateFmt = formatDate(ipo.opendate);
-  const closeDateFmt = formatDate(ipo.closedate);
-  const dateRangeStr = (ipo.opendate && ipo.closedate)
-    ? `${openDateFmt.replace(/\d{4}/, '').trim()} - ${closeDateFmt}`
-    : openDateFmt || 'TBA';
+  const companyName = ipo.companyName || ipo.ipoName || 'IPO Company';
+  const companyMark = ipo.Symbol
+    ? ipo.Symbol.slice(0, 3)
+    : companyName.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase();
+  const openDate = formatDate(ipo.opendate);
+  const closeDate = formatDate(ipo.closedate);
+
+  const statusLabel = isOpen
+    ? 'IPO Open'
+    : rawStatus === 'LISTED'
+      ? 'Listed'
+      : rawStatus === 'ALLOTTED'
+        ? 'Allotted'
+        : rawStatus === 'CLOSED'
+          ? 'Closed'
+          : 'Upcoming IPO';
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onViewDetails(ipo);
+    }
+  };
 
   return (
-    <div
-      className={`groww-card flex flex-col justify-between p-5 relative cursor-pointer group transition-all ${
-        isClosed ? 'bg-white border-slate-200/90' : 'bg-white border-slate-200'
-      }`}
+    <article
+      className={`group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-l-4 bg-white shadow-[0_8px_28px_-18px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_-20px_rgba(15,23,42,0.38)] ${styles.card}`}
       onClick={() => onViewDetails(ipo)}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      aria-label={`View details for ${companyName}`}
     >
-      <div>
-        {/* Top Header: Brand Avatar + Title + Status Badge */}
-        <div className="flex items-start justify-between gap-3 mb-3.5">
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Soft Gray Brand Avatar */}
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-medium text-xs tracking-wider shrink-0 border shadow-2xs"
-              style={{
-                backgroundColor: brand.bg,
-                borderColor: brand.border,
-                color: brand.text,
-              }}
-            >
-              {ipo.Symbol ? ipo.Symbol.slice(0, 3) : (ipo.companyName || 'IPO').slice(0, 2).toUpperCase()}
-            </div>
+      <header className={`border-b border-white/80 px-4 pb-4 pt-3.5 ${styles.header}`}>
+        <div className="mb-3.5 flex items-center justify-between gap-3">
+          <span className={`inline-flex items-center gap-2 rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] ${styles.badge}`}>
+            <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" aria-hidden="true" />
+            {statusLabel}
+          </span>
 
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-800 leading-snug truncate group-hover:text-slate-600 transition-colors">
-                {ipo.companyName || ipo.ipoName}
-              </h3>
-              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                <span className="text-xs text-slate-500 font-normal">
-                  {isClosed ? `Closed: ${closeDateFmt}` : isUpcoming ? `Opens: ${openDateFmt}` : dateRangeStr}
-                </span>
-                <span className="text-slate-300">•</span>
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${
-                  isSME
-                    ? 'bg-slate-100 text-slate-700 border-slate-300'
-                    : 'bg-slate-50 text-slate-600 border-slate-200'
-                }`}>
-                  {isSME ? 'SME' : 'MAINBOARD'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Status Chip Badge */}
-          <div className="shrink-0">
-            {isClosed ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-300">
-                <span>🏁</span> Listed
-              </span>
-            ) : daysBadge.type === 'urgent' ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
-                {daysBadge.text}
-              </span>
-            ) : isOpen ? (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Open for Bidding
-              </span>
-            ) : (
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200">
-                {daysBadge.text}
-              </span>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${styles.accentText}`}>
+              <ChartBar size={15} weight="bold" aria-hidden="true" />
+              {isSME ? 'SME' : 'Mainboard'}
+            </span>
+            {onShare && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onShare(ipo);
+                }}
+                title="Share offering"
+                aria-label={`Share ${companyName}`}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/90 bg-white/90 text-slate-500 shadow-sm transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              >
+                <ShareNetwork size={16} weight="bold" aria-hidden="true" />
+              </button>
             )}
           </div>
         </div>
 
-        {/* Dynamic Metrics Box — Tailored for Closed/Listed vs Open/Upcoming */}
-        {isClosed ? (
-          /* Closed / Listed Card Content */
-          <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50/90 rounded-xl border border-slate-200/70 mb-3.5">
-            <div>
-              <span className="text-[11px] text-slate-500 font-normal block">
-                Final Issue Price
-              </span>
-              <p className="text-sm font-bold mt-0.5 leading-snug text-slate-900">
-                {maxPrice > 0 ? `₹${maxPrice}` : 'Price TBA'}
-              </p>
-              <span className="text-[11px] text-slate-500 font-normal block mt-0.5">
-                {lotSize > 0 ? `Lot: ${lotSize} Shares` : 'Lot size TBA'}
-              </span>
-            </div>
-
-            <div>
-              <span className="text-[11px] text-slate-500 font-normal block">
-                Total Issue Size
-              </span>
-              <p className="text-sm font-bold text-slate-900 mt-0.5 leading-snug">
-                {ipo.issuesize > 0 ? formatCrores(ipo.issuesize) : 'TBA'}
-              </p>
-              <span className="text-[11px] text-slate-500 font-normal block mt-0.5">
-                {isSME ? 'BSE SME / NSE Emerge' : 'NSE / BSE Mainboard'}
-              </span>
-            </div>
+        <div className="flex items-center gap-3.5">
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold tracking-wide shadow-lg ${styles.avatar}`}>
+            {companyMark}
           </div>
-        ) : (
-          /* Open / Upcoming Card Content */
-          <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 mb-3.5">
-            <div>
-              <span className="text-[11px] text-slate-500 font-normal block">
-                Min. Investment
-              </span>
-              <p className="text-sm font-semibold mt-0.5 leading-snug text-slate-800">
-                {minInvestment > 0 ? formatCurrency(minInvestment) : 'Price TBA'}
-              </p>
-              <span className="text-[11px] text-slate-400 font-normal block mt-0.5">
-                {lotSize > 0 ? `${lotSize} Shares (1 Lot)` : 'Lot size TBA'}
-              </span>
-            </div>
-
-            <div>
-              <span className="text-[11px] text-slate-500 font-normal block">
-                Price Band
-              </span>
-              <p className="text-sm font-semibold text-slate-800 mt-0.5 leading-snug">
-                {minPrice > 0 && maxPrice > 0
-                  ? (minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice} - ₹${maxPrice}`)
-                  : (maxPrice > 0 ? `₹${maxPrice}` : 'To Be Announced')}
-              </p>
-              <span className="text-[11px] text-slate-400 font-normal block mt-0.5">
-                {ipo.issuesize > 0 ? `Issue: ${formatCrores(ipo.issuesize)}` : 'Issue size TBA'}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Subscription Progress Bar */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-slate-500 font-normal">
-              {isClosed ? 'Final Subscription Demand' : 'Live Subscription Rate'}
-            </span>
-            <span className={`text-xs font-semibold ${subscriptionNum > 0 ? 'text-slate-800' : 'text-slate-500'}`}>
-              {ipo.totalSubscription || '0.0'}x {isClosed && subscriptionNum >= 1 ? '(Final)' : ''}
-            </span>
-          </div>
-          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                isClosed
-                  ? 'bg-slate-700'
-                  : subscriptionNum >= 1
-                  ? 'bg-emerald-600'
-                  : 'bg-slate-500'
-              }`}
-              style={{
-                width: `${Math.min(100, Math.max(subscriptionNum > 0 ? 12 : 0, subscriptionNum * 25))}%`,
-              }}
-            />
+          <div className="min-w-0">
+            <h3 className="line-clamp-2 text-[15px] font-bold leading-snug tracking-[-0.01em] text-slate-950">
+              {companyName}
+            </h3>
+            <p className="mt-1 truncate text-xs font-medium text-slate-600">
+              {ipo.industry || (isSME ? 'SME Platform Issue' : 'Public Market Offering')}
+            </p>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Action Row */}
-      <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-1 flex-col px-4 py-4">
+        <section className="border-b border-slate-200 pb-3">
+          <p className="text-xs font-medium text-slate-500">Minimum Investment</p>
+          <p className={`mt-1 text-2xl font-extrabold leading-none tracking-[-0.035em] ${styles.accentText}`}>
+            {minInvestment > 0 ? formatCurrency(minInvestment) : 'Price TBA'}
+          </p>
+          <p className="mt-2 text-xs font-medium text-slate-500">
+            {lotSize > 0 ? `1 Lot · ${lotSize.toLocaleString('en-IN')} Shares` : 'Lot size to be announced'}
+          </p>
+        </section>
+
+        <section className="grid grid-cols-3 divide-x divide-slate-200 border-b border-slate-200 py-3">
+          <div className="pr-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Price Band</p>
+            <p className="mt-1 text-sm font-bold leading-snug text-slate-900">
+              {minPrice > 0 && maxPrice > 0
+                ? minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice}–${maxPrice}`
+                : maxPrice > 0 ? `₹${maxPrice}` : 'TBA'}
+            </p>
+          </div>
+          <div className="px-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Lot Size</p>
+            <p className="mt-1 text-sm font-bold leading-snug text-slate-900">
+              {lotSize > 0 ? lotSize.toLocaleString('en-IN') : 'TBA'}
+            </p>
+          </div>
+          <div className="pl-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Issue Size</p>
+            <p className="mt-1 text-sm font-bold leading-snug text-slate-900">
+              {ipo.issuesize > 0 ? formatCrores(ipo.issuesize) : 'TBA'}
+            </p>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-2 gap-3 border-b border-slate-200 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${styles.icon}`}>
+              <CalendarBlank size={15} weight="bold" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Open Date</p>
+              <p className="mt-0.5 text-xs font-bold text-slate-800">{openDate}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${styles.icon}`}>
+              <CalendarBlank size={15} weight="bold" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Close Date</p>
+              <p className="mt-0.5 text-xs font-bold text-slate-800">{closeDate}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-3">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                {isClosed ? 'Final Subscription' : isOpen ? 'Live Subscription' : 'Subscription'}
+              </p>
+              <p className={`mt-1 flex items-center gap-1.5 text-xl font-extrabold leading-none ${styles.accentText}`}>
+                {subscriptionNum > 0 ? `${subscriptionNum}x` : '—'}
+                {subscriptionNum >= 1 && <TrendUp size={18} weight="bold" aria-hidden="true" />}
+              </p>
+            </div>
+            <p className="max-w-[45%] text-right text-[11px] font-medium leading-relaxed text-slate-500">
+              {isUpcoming ? daysBadge.text : subscriptionNum >= 1 ? 'Strong investor demand' : 'Demand building'}
+            </p>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100" aria-label={`Subscription ${subscriptionNum} times`}>
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${styles.progress}`}
+              style={{ width: `${Math.min(100, Math.max(subscriptionNum > 0 ? 10 : 0, subscriptionNum * 10))}%` }}
+            />
+          </div>
+        </section>
+
         <button
-          onClick={() => onViewDetails(ipo)}
-          className="btn-dark-primary flex-1 py-2 px-3.5 rounded-lg text-xs font-medium text-center flex items-center justify-center gap-1.5 transition-all shadow-xs"
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onViewDetails(ipo);
+          }}
+          className={`mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${styles.button}`}
         >
           {isClosed ? 'View Listing Report' : isOpen ? 'View & Apply Details' : 'View Details'}
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m9 18 6-6-6-6"/>
-          </svg>
+          <ArrowRight size={17} weight="bold" aria-hidden="true" />
         </button>
-
-        {onShare && (
-          <button
-            onClick={() => onShare(ipo)}
-            title="Share Offering"
-            className="bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 border border-slate-200 p-2 rounded-lg text-xs flex items-center justify-center transition-colors shadow-2xs"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-              <polyline points="16 6 12 2 8 6"/>
-              <line x1="12" y1="2" x2="12" y2="15"/>
-            </svg>
-          </button>
-        )}
       </div>
-    </div>
+    </article>
   );
 }

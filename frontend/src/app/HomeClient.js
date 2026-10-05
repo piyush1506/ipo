@@ -470,14 +470,14 @@ function HomeContent({ initialIpos = [] }) {
 
         {/* Dynamic IPO Listing: Grid or Table */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map(i => (
               <IpoCardSkeleton key={i} />
             ))}
           </div>
         ) : filteredIpos.length > 0 ? (
           viewMode === 'GRID' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredIpos.map(ipo => (
                 <IpoCard
                   key={ipo.ipoId || ipo.Symbol}
