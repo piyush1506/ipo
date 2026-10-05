@@ -1,29 +1,43 @@
-// Dynamic Upstox IPO Data Service (Optimized with In-Memory Caching & SWR)
+// Dynamic Upstox IPO Data Service (Optimized with Persistent In-Memory & LocalStorage SWR Caching)
 
 const getApiBase = () => {
   if (typeof window !== 'undefined') return '';
   return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 };
 
+const STORAGE_KEY = 'pkc_ipos_cache_v2';
+const DETAILS_STORAGE_PREFIX = 'pkc_ipo_detail_';
+const CACHE_FRESH_TTL = 3 * 60 * 1000; // 3 minutes fresh TTL
+const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours stale fallback
+
 // Client-side Memory Cache & Request Deduplication
 let memoryIpoCache = null;
 let memoryIpoTimestamp = 0;
 const memoryDetailsCache = new Map();
 const inFlightRequests = new Map();
-const CACHE_TTL = 30 * 1000; // 30 seconds
 
+/**
+ * Synchronously retrieves cached IPOs instantly (0ms) from RAM or LocalStorage
+ */
 export function getCachedIPOs() {
-  if (memoryIpoCache && (Date.now() - memoryIpoTimestamp < CACHE_TTL * 4)) {
+  const now = Date.now();
+  if (memoryIpoCache && Array.isArray(memoryIpoCache) && memoryIpoCache.length > 0) {
     return memoryIpoCache;
   }
   if (typeof window !== 'undefined') {
     try {
-      const saved = sessionStorage.getItem('pkc_ipos_cache');
+      const saved = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem('pkc_ipos_cache');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          memoryIpoCache = parsed;
-          return parsed;
+        const data = Array.isArray(parsed) ? parsed : (parsed.data || []);
+        const timestamp = parsed.timestamp || 0;
+        if (Array.isArray(data) && data.length > 0) {
+          // Allow stale data up to 24 hours for instant 0ms initial render
+          if (now - timestamp < CACHE_MAX_AGE || !parsed.timestamp) {
+            memoryIpoCache = data;
+            memoryIpoTimestamp = timestamp || (now - CACHE_FRESH_TTL); // mark for background refresh if older
+            return data;
+          }
         }
       }
     } catch (e) {}
@@ -31,12 +45,15 @@ export function getCachedIPOs() {
   return [];
 }
 
+/**
+ * Fetch all IPOs with non-blocking Stale-While-Revalidate pattern
+ */
 export async function fetchAllIPOs(filters = {}, forceRefresh = false) {
   const hasFilters = Boolean((filters.status && filters.status !== 'all') || (filters.type && filters.type !== 'all') || filters.search);
   const now = Date.now();
 
-  // If no specific filters and warm cache exists, return immediately
-  if (!hasFilters && !forceRefresh && memoryIpoCache && (now - memoryIpoTimestamp < CACHE_TTL)) {
+  // Instant fast return if fresh memory cache exists
+  if (!hasFilters && !forceRefresh && memoryIpoCache && (now - memoryIpoTimestamp < CACHE_FRESH_TTL)) {
     return memoryIpoCache;
   }
 
@@ -49,17 +66,23 @@ export async function fetchAllIPOs(filters = {}, forceRefresh = false) {
   const base = getApiBase();
   const url = `${base}/api/ipos${qs}`;
 
-  // Request deduplication: if identical request is already flying, reuse promise
+  // Deduplicate inflight requests to avoid duplicate network calls
   if (inFlightRequests.has(url)) {
     return inFlightRequests.get(url);
   }
 
   const fetchPromise = (async () => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
       const res = await fetch(url, {
         cache: 'default',
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
@@ -68,6 +91,10 @@ export async function fetchAllIPOs(filters = {}, forceRefresh = false) {
             memoryIpoTimestamp = Date.now();
             if (typeof window !== 'undefined') {
               try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                  data: json.data,
+                  timestamp: Date.now()
+                }));
                 sessionStorage.setItem('pkc_ipos_cache', JSON.stringify(json.data));
               } catch (e) {}
             }
@@ -76,11 +103,11 @@ export async function fetchAllIPOs(filters = {}, forceRefresh = false) {
         }
       }
     } catch (err) {
-      console.error('Failed to fetch dynamic IPOs:', err.message);
+      console.warn('Dynamic IPO fetch notice:', err.message);
     } finally {
       inFlightRequests.delete(url);
     }
-    // Fallback to cache if request fails
+    // Return stale cache if network request fails or takes too long
     return memoryIpoCache || getCachedIPOs();
   })();
 
@@ -88,20 +115,23 @@ export async function fetchAllIPOs(filters = {}, forceRefresh = false) {
   return fetchPromise;
 }
 
+/**
+ * Fetch specific IPO details with caching
+ */
 export async function fetchIPODetails(id, forceRefresh = false) {
   if (!id) return null;
   const key = String(id).toLowerCase();
   const now = Date.now();
 
-  // Check details cache
+  // 1. Check in-memory details cache
   if (!forceRefresh && memoryDetailsCache.has(key)) {
     const cached = memoryDetailsCache.get(key);
-    if (now - cached.timestamp < CACHE_TTL) {
+    if (now - cached.timestamp < CACHE_FRESH_TTL) {
       return cached.data;
     }
   }
 
-  // Check if item exists in list cache
+  // 2. Check in list cache (RAM or LocalStorage)
   const cachedList = memoryIpoCache || getCachedIPOs();
   const foundInList = cachedList.find(i => 
     String(i.ipoId).toLowerCase() === key || 
@@ -109,18 +139,24 @@ export async function fetchIPODetails(id, forceRefresh = false) {
   );
 
   const base = getApiBase();
-  const url = `${base}/api/ipos/${id}`;
+  const url = `${base}/api/ipos/${encodeURIComponent(id)}`;
 
   if (inFlightRequests.has(url)) {
-    return inFlightRequests.get(url);
+    return foundInList || inFlightRequests.get(url);
   }
 
   const fetchPromise = (async () => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
       const res = await fetch(url, {
         cache: 'default',
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
@@ -129,7 +165,7 @@ export async function fetchIPODetails(id, forceRefresh = false) {
         }
       }
     } catch (err) {
-      console.error(`Failed to fetch dynamic IPO details for ${id}:`, err.message);
+      console.warn(`Dynamic IPO details notice for ${id}:`, err.message);
     } finally {
       inFlightRequests.delete(url);
     }

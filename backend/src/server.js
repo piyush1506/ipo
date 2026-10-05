@@ -4,8 +4,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const IPO = require('./models/ipo');
 const connectDB = require('./config/db');
-const { SyncIPOs, fetchDirectUpstoxList } = require('./services/iposervices');
-require('./jobs/jobsync');
+const { SyncIPOs } = require('./services/iposervices');
 
 const app = express();
 
@@ -15,41 +14,100 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// In-Memory High-Speed Cache
+// In-Memory High-Speed Cache with Stale-While-Revalidate (SWR)
 const memoryCache = {
   ipos: null,
   iposTimestamp: 0,
   detailsMap: new Map(),
-  TTL: 30 * 1000 // 30 seconds fresh cache
+  TTL: 5 * 60 * 1000, // 5 minutes fresh TTL
+  isRefreshing: false
 };
 
-connectDB();
+// Warm cache immediately from DB into RAM
+async function warmCache() {
+  try {
+    if (mongoose.connection.readyState !== 1) return;
+    const ipos = await IPO.find({ source: 'upstox' })
+      .sort({ opendate: -1, lastupdated: -1 })
+      .lean();
+
+    if (ipos && ipos.length > 0) {
+      const refreshedAt = Date.now();
+      const detailsMap = new Map();
+
+      ipos.forEach(item => {
+        if (item.ipoId) detailsMap.set(String(item.ipoId).toLowerCase(), { data: item, timestamp: refreshedAt });
+        if (item.Symbol) detailsMap.set(String(item.Symbol).toLowerCase(), { data: item, timestamp: refreshedAt });
+      });
+
+      memoryCache.ipos = ipos;
+      memoryCache.iposTimestamp = refreshedAt;
+      memoryCache.detailsMap = detailsMap;
+      console.log(`[Cache] Successfully pre-warmed ${ipos.length} IPOs in RAM.`);
+    }
+  } catch (err) {
+    console.error('[Cache] Warm cache notice:', err.message);
+  }
+}
+
+// Background refresh without blocking current request
+function triggerBackgroundRefresh() {
+  if (memoryCache.isRefreshing) return;
+  memoryCache.isRefreshing = true;
+  warmCache().finally(() => {
+    memoryCache.isRefreshing = false;
+  });
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
     dbState: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    cacheStatus: memoryCache.ipos ? 'warm' : 'cold'
+    cacheStatus: memoryCache.ipos ? 'warm' : 'cold',
+    cachedCount: memoryCache.ipos ? memoryCache.ipos.length : 0
   });
 });
 
-// Single IPO Details - With Sub-Millisecond In-Memory Cache
+// Single IPO Details - Sub-Millisecond In-Memory Cache
 app.get(['/api/ipos/:id', '/api/v1/ipos/:id'], async (req, res) => {
   try {
     const queryId = req.params.id;
+    const key = queryId.toLowerCase();
     const now = Date.now();
 
-    // Check in-memory single item cache
-    const cachedItem = memoryCache.detailsMap.get(queryId.toLowerCase());
-    if (cachedItem && (now - cachedItem.timestamp < memoryCache.TTL)) {
+    // 1. Check RAM Cache
+    const cachedItem = memoryCache.detailsMap.get(key);
+    if (cachedItem) {
+      if (now - cachedItem.timestamp > memoryCache.TTL) {
+        triggerBackgroundRefresh();
+      }
       res.setHeader('X-Cache', 'HIT-MEMORY');
-      res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=60');
+      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
       return res.json({
         success: true,
         data: cachedItem.data
       });
+    }
+
+    // 2. Check if item exists in list cache
+    if (memoryCache.ipos && memoryCache.ipos.length > 0) {
+      const foundInList = memoryCache.ipos.find(i =>
+        String(i.ipoId).toLowerCase() === key ||
+        (i.Symbol && i.Symbol.toLowerCase() === key) ||
+        (i.companyName && i.companyName.toLowerCase().includes(key))
+      );
+      if (foundInList) {
+        memoryCache.detailsMap.set(key, { data: foundInList, timestamp: now });
+        res.setHeader('X-Cache', 'HIT-LIST');
+        res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+        return res.json({
+          success: true,
+          data: foundInList
+        });
+      }
     }
 
     let ipo = null;
@@ -66,29 +124,26 @@ app.get(['/api/ipos/:id', '/api/v1/ipos/:id'], async (req, res) => {
     }
 
     if (!ipo) {
-      const liveList = await fetchDirectUpstoxList();
-      ipo = liveList.find(i => 
-        String(i.ipoId) === String(queryId) || 
-        (i.Symbol && i.Symbol.toLowerCase() === queryId.toLowerCase()) ||
-        (i.companyName && i.companyName.toLowerCase().includes(queryId.toLowerCase()))
-      );
-    }
-
-    if (!ipo) {
+      if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({
+          success: false,
+          message: 'IPO data store is temporarily unavailable.'
+        });
+      }
       return res.status(404).json({
         success: false,
-        message: `Upstox IPO '${queryId}' not found.`
+        message: `IPO '${queryId}' not found.`
       });
     }
 
     // Save in memory cache
-    memoryCache.detailsMap.set(queryId.toLowerCase(), {
+    memoryCache.detailsMap.set(key, {
       data: ipo,
       timestamp: now
     });
 
     res.setHeader('X-Cache', 'MISS');
-    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=60');
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
     res.json({
       success: true,
       data: ipo
@@ -101,33 +156,50 @@ app.get(['/api/ipos/:id', '/api/v1/ipos/:id'], async (req, res) => {
   }
 });
 
-// Get List of IPOs - Ultra-Fast In-Memory Caching (Responds in < 1ms)
+// Get List of IPOs - Ultra-Fast In-Memory Cache (0ms Response)
 app.get(['/api/ipos', '/api/v1/ipos'], async (req, res) => {
   try {
     const { status, type, search } = req.query;
     const now = Date.now();
 
     let allIpos = [];
+    let cacheStatus = 'MISS';
 
-    // Check if warm memory cache exists
-    if (memoryCache.ipos && (now - memoryCache.iposTimestamp < memoryCache.TTL)) {
+    // Check if memory cache exists
+    if (memoryCache.ipos && memoryCache.ipos.length > 0) {
       allIpos = memoryCache.ipos;
+      cacheStatus = 'HIT-MEMORY';
+      // Stale-While-Revalidate: refresh in background if older than TTL
+      if (now - memoryCache.iposTimestamp > memoryCache.TTL) {
+        triggerBackgroundRefresh();
+      }
     } else {
-      // Query MongoDB
+      // Cold start: Query MongoDB
       if (mongoose.connection.readyState === 1) {
         allIpos = await IPO.find({ source: 'upstox' })
           .sort({ opendate: -1, lastupdated: -1 })
           .lean();
+        cacheStatus = allIpos.length > 0 ? 'MISS-DB' : 'MISS-EMPTY';
       }
 
-      // Fallback directly to live Upstox API if DB is empty
+      // Provider calls are deliberately excluded from the user request path.
+      // The background sync job updates MongoDB and then refreshes this cache.
       if (!allIpos || allIpos.length === 0) {
-        allIpos = await fetchDirectUpstoxList();
+        return res.status(503).json({
+          success: false,
+          message: mongoose.connection.readyState === 1
+            ? 'IPO data is warming up. Please retry shortly.'
+            : 'IPO data store is temporarily unavailable.'
+        });
       }
 
       if (allIpos && allIpos.length > 0) {
         memoryCache.ipos = allIpos;
         memoryCache.iposTimestamp = now;
+        allIpos.forEach(item => {
+          if (item.ipoId) memoryCache.detailsMap.set(String(item.ipoId).toLowerCase(), { data: item, timestamp: now });
+          if (item.Symbol) memoryCache.detailsMap.set(String(item.Symbol).toLowerCase(), { data: item, timestamp: now });
+        });
       }
     }
 
@@ -152,8 +224,8 @@ app.get(['/api/ipos', '/api/v1/ipos'], async (req, res) => {
       );
     }
 
-    res.setHeader('X-Cache', memoryCache.ipos ? 'HIT' : 'MISS');
-    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=60');
+    res.setHeader('X-Cache', cacheStatus);
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
 
     res.json({
       success: true,
@@ -169,16 +241,40 @@ app.get(['/api/ipos', '/api/v1/ipos'], async (req, res) => {
   }
 });
 
-// Trigger Upstox Data Sync & Invalidate Cache
-app.all(['/api/sync', '/api/v1/sync-ipos'], async (req, res) => {
+// Trigger an explicit provider sync. Scheduled jobs call the service directly;
+// this public HTTP entry point requires a deployment secret.
+app.post(['/api/sync', '/api/v1/sync-ipos'], async (req, res) => {
   try {
+    const syncApiKey = process.env.SYNC_API_KEY;
+    const authorization = req.get('authorization') || '';
+    const suppliedKey = req.get('x-sync-key') || authorization.replace(/^Bearer\s+/i, '');
+
+    if (!syncApiKey) {
+      return res.status(503).json({
+        success: false,
+        message: 'Manual synchronization is not configured.'
+      });
+    }
+
+    if (suppliedKey !== syncApiKey) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized synchronization request.'
+      });
+    }
+
     console.log('Real Upstox IPO sync triggered via API');
     const result = await SyncIPOs();
 
-    // Invalidate in-memory cache to force refresh
-    memoryCache.ipos = null;
-    memoryCache.iposTimestamp = 0;
-    memoryCache.detailsMap.clear();
+    if (!result.success) {
+      return res.status(502).json({
+        success: false,
+        message: result.error || result.message || 'Upstox synchronization failed.'
+      });
+    }
+
+    // Refresh in-memory cache with new data
+    await warmCache();
 
     res.json({
       success: true,
@@ -194,6 +290,22 @@ app.all(['/api/sync', '/api/v1/sync-ipos'], async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Real Upstox IPO Server running on port ${PORT}`);
+
+async function startServer() {
+  // Start the HTTP server immediately. Until MongoDB is ready, read endpoints
+  // return a fast 503 instead of blocking on MongoDB or calling Upstox.
+  app.listen(PORT, () => {
+    console.log(`Real Upstox IPO Server running on port ${PORT}`);
+  });
+
+  await connectDB();
+  await warmCache();
+
+  const { startSyncJobs } = require('./jobs/jobsync');
+  startSyncJobs(warmCache);
+}
+
+startServer().catch((error) => {
+  console.error('Backend startup failed:', error);
+  process.exitCode = 1;
 });

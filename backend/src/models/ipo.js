@@ -76,4 +76,8 @@ const ipoSchema = new mongoose.Schema({
     }
 });
 
+ipoSchema.index({ source: 1, opendate: -1 });
+ipoSchema.index({ Symbol: 1 });
+ipoSchema.index({ status: 1 });
+
 module.exports = mongoose.model('Ipo', ipoSchema);

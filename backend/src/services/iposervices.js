@@ -2,6 +2,7 @@ const axios = require('axios');
 const Ipo = require('../models/ipo');
 
 const UPSTOX_API_BASE = 'https://api.upstox.com/v2';
+let syncPromise = null;
 
 function getUpstoxHeaders() {
   const token = process.env.UPSTOX_ACCESS_TOKEN;
@@ -45,7 +46,7 @@ async function mapConcurrent(items, limit, fn) {
 /**
  * Synchronize all IPOs from Upstox API (Open, Upcoming, Closed) into MongoDB with Parallel Concurrency
  */
-async function SyncIPOs() {
+async function executeSyncIPOs() {
   const startTime = Date.now();
   console.log('[Sync] Starting optimized parallel Upstox IPO synchronization...');
   const headers = getUpstoxHeaders();
@@ -165,60 +166,19 @@ async function SyncIPOs() {
   }
 }
 
-/**
- * Direct Live fetch from Upstox without needing DB sync first
- */
-async function fetchDirectUpstoxList() {
-  const headers = getUpstoxHeaders();
-  if (!headers) return [];
-
-  try {
-    const [openRes, upcomingRes, closedRes] = await Promise.allSettled([
-      axios.get(`${UPSTOX_API_BASE}/ipos`, { headers, timeout: 6000 }),
-      axios.get(`${UPSTOX_API_BASE}/ipos?status=upcoming`, { headers, timeout: 6000 }),
-      axios.get(`${UPSTOX_API_BASE}/ipos?status=closed`, { headers, timeout: 6000 })
-    ]);
-
-    const openList = openRes.status === 'fulfilled' && openRes.value.data?.data ? openRes.value.data.data : [];
-    const upcomingList = upcomingRes.status === 'fulfilled' && upcomingRes.value.data?.data ? upcomingRes.value.data.data : [];
-    const closedList = closedRes.status === 'fulfilled' && closedRes.value.data?.data ? closedRes.value.data.data : [];
-
-    const formatItem = (item, status) => ({
-      ipoId: item.id || item.symbol,
-      companyName: item.name,
-      ipoName: item.name,
-      Symbol: item.symbol,
-      isin: item.isin,
-      industry: item.industry || 'Market Offer',
-      issueType: (item.issue_type || '').toLowerCase() === 'sme' ? 'SME' : 'Mainboard',
-      exchange: ['NSE', 'BSE'],
-      priceband: {
-        min: Number(item.minimum_price || 0),
-        max: Number(item.maximum_price || 0)
-      },
-      lotsize: 1,
-      cutoffPrice: Number(item.maximum_price || 0),
-      issuesize: Number(item.issue_size || 0),
-      opendate: item.bidding_start_date,
-      closedate: item.bidding_end_date,
-      totalSubscription: String(item.total_subscription || '0.0'),
-      status: status,
-      source: 'upstox'
-    });
-
-    return [
-      ...openList.map(i => formatItem(i, 'Open')),
-      ...upcomingList.map(i => formatItem(i, 'Upcoming')),
-      ...closedList.map(i => formatItem(i, 'Closed'))
-    ];
-  } catch (err) {
-    console.error('Error fetching live Upstox list directly:', err.message);
-    return [];
+function SyncIPOs() {
+  if (syncPromise) {
+    return syncPromise;
   }
+
+  syncPromise = executeSyncIPOs().finally(() => {
+    syncPromise = null;
+  });
+
+  return syncPromise;
 }
 
 module.exports = {
   SyncIPOs,
-  fetchDirectUpstoxList,
   fetchUpstoxIpoDetails
 };

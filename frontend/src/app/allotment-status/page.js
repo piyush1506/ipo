@@ -24,7 +24,7 @@ export default function RegistrarsDirectoryPage() {
       name: 'KFin Technologies Ltd.',
       type: 'BSE / NSE Primary Market Registrar',
       url: 'https://ris.kfintech.com/ipostatus/',
-      notableIpos: 'Life Insurance Corporation (LIC), FirstCry (Brainbees), Hyundai Motor India',
+      notableIpos: 'Life Insurance Corporation (LIC), FirstCry (  ), Hyundai Motor India',
       supportEmail: 'einward.ris@kfintech.com',
       phone: '+91 40 6716 2222 / 1800 309 4001',
     },
