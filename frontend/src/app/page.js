@@ -1,4 +1,5 @@
 import HomeClient from './HomeClient';
+import { FALLBACK_IPOS } from '../data/fallbackIpos';
 
 const BACKEND_TIMEOUT_MS = 2500;
 
@@ -21,14 +22,17 @@ async function getInitialIPOs() {
     });
 
     if (!response.ok) {
-      return [];
+      return FALLBACK_IPOS;
     }
 
     const payload = await response.json();
-    return payload.success && Array.isArray(payload.data) ? payload.data : [];
+    if (payload.success && Array.isArray(payload.data) && payload.data.length > 0) {
+      return payload.data;
+    }
+    return FALLBACK_IPOS;
   } catch (error) {
     console.warn('Initial IPO server fetch notice:', error.message);
-    return [];
+    return FALLBACK_IPOS;
   } finally {
     clearTimeout(timeoutId);
   }

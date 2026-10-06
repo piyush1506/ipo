@@ -1,4 +1,5 @@
 // Dynamic Upstox IPO Data Service (Optimized with Persistent In-Memory & LocalStorage SWR Caching)
+import { FALLBACK_IPOS } from '../data/fallbackIpos';
 
 const getApiBase = () => {
   if (typeof window !== 'undefined') return '';
@@ -42,7 +43,7 @@ export function getCachedIPOs() {
       }
     } catch (e) {}
   }
-  return [];
+  return FALLBACK_IPOS;
 }
 
 /**

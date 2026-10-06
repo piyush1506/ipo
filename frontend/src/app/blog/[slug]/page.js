@@ -219,9 +219,9 @@ export default async function BlogPostPage({ params }) {
               </div>
               <div className="text-xs">
                 <p className="font-bold text-slate-900">{post.author.name}</p>
-                <p className="text-slate-500 mt-0.5">{post.author.role}</p>
+                <p className="text-slate-500 mt-0.5 font-medium">{post.author.role}</p>
                 <p className="text-slate-600 mt-2 leading-relaxed">
-                  I track Indian primary market offerings, SEBI guidelines, and registrar updates to help everyday investors navigate IPO bidding, allotment status, and listing strategies with clear, practical guides.
+                  {post.author.bio || 'Tracking Indian primary market offerings, SEBI guidelines, and registrar updates to empower retail investors with objective data, valuation benchmarks, and allotment routing.'}
                 </p>
               </div>
             </div>

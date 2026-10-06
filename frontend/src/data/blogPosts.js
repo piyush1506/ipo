@@ -1,6 +1,7 @@
 const DEFAULT_AUTHOR = {
-  name: 'Piyush (pkctechs)',
-  role: 'Independent Investor & Tech Enthusiast',
+  name: 'Piyush Kumar Choudhary',
+  role: 'Lead Financial Data Analyst & Primary Market Researcher',
+  bio: 'Specializing in Indian primary capital markets, SEBI regulatory frameworks, and registrar status systems with deep experience analyzing DRHP filings and primary market mechanics.',
   avatar: 'PK'
 };
 

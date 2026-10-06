@@ -127,20 +127,94 @@ export default function AboutPage() {
             </ul>
           </section>
 
-          {/* Section 4 - Editorial Independence */}
+          {/* Section 4 - Research & Analysis Methodology */}
           <section>
-            <h2 className="text-lg font-bold text-slate-900 mb-3">Editorial Independence & Policy</h2>
+            <h2 className="text-lg font-bold text-slate-900 mb-3">Our Research & Analysis Methodology</h2>
             <p className="mb-3">
-              pkctechs operates under strict editorial independence. We do not accept sponsored IPO reviews, paid ratings, or promotional endorsements from issuer companies or merchant bankers. All mathematical calculations, valuation comparisons, and subscription statistics are presented objectively without financial bias.
+              To provide retail investors with objective, institutional-quality insights, our research process follows a rigorous 4-step framework:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-xs font-bold text-slate-900 block mb-1">1. DRHP & RHP Deep Dive</span>
+                <p className="text-xs text-slate-500 font-normal">
+                  We analyze issuer filings with SEBI, examining object of issue, promoter background, litigation history, and risk factors before publishing.
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-xs font-bold text-slate-900 block mb-1">2. Financial Statements & Ratio Audit</span>
+                <p className="text-xs text-slate-500 font-normal">
+                  Our team evaluates 3-year Restated Financials: CAGR Revenue, EBITDA Margins, RoNW/RoE, and Debt-to-Equity ratios.
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-xs font-bold text-slate-900 block mb-1">3. Peer Valuation Benchmarking</span>
+                <p className="text-xs text-slate-500 font-normal">
+                  We compare asking P/E (Price-to-Earnings) against listed industry peers to determine whether an issue is priced fairly or aggressively.
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-xs font-bold text-slate-900 block mb-1">4. Registrar Routing Verification</span>
+                <p className="text-xs text-slate-500 font-normal">
+                  Direct routing endpoints are verified against BSE/NSE bid books and registrar APIs (Link Intime, KFintech, Bigshare) to prevent broken links.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 5 - Editorial Team & Contributors */}
+          <section>
+            <h2 className="text-lg font-bold text-slate-900 mb-3">Our Editorial & Research Team</h2>
+            <p className="text-xs text-slate-500 mb-4">
+              pkctechs is led by technology engineers and financial market analysts dedicated to bringing clarity to the primary capital markets:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-sm">
+                    PK
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">Piyush Kumar Choudhary</h4>
+                    <span className="text-[11px] text-slate-500 block">Lead Platform Architect & Data Engineer</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Specializes in high-frequency financial data aggregation, Upstox API streaming integrations, and real-time registrar status routing architectures.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-sm">
+                    ER
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">pkctechs Primary Market Desk</h4>
+                    <span className="text-[11px] text-slate-500 block">IPO Research & DRHP Editorial Team</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Focuses on analyzing Draft Red Herring Prospectuses, SME platform trends, institutional bidding demand, and registrar allotment reconciliation.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 6 - Editorial Independence & Fact Checking */}
+          <section>
+            <h2 className="text-lg font-bold text-slate-900 mb-3">Editorial Independence & Fact-Checking Policy</h2>
+            <p className="mb-3">
+              pkctechs operates with 100% editorial independence. We do not accept sponsored IPO reviews, paid ratings, or promotional endorsements from issuer companies, merchant bankers, or underwriters. All mathematical calculations, valuation comparisons, and subscription statistics are presented objectively without financial bias.
             </p>
             <p className="text-xs text-slate-500">
               For complete legal terms and regulatory disclaimers, please consult our{' '}
-              <Link href="/terms" className="text-slate-900 underline font-medium">Terms of Service</Link> and{' '}
+              <Link href="/terms" className="text-slate-900 underline font-medium">Terms of Service</Link>,{' '}
+              <Link href="/privacy-policy" className="text-slate-900 underline font-medium">Privacy Policy</Link>, and{' '}
               <Link href="/disclaimer" className="text-slate-900 underline font-medium">Regulatory Disclaimer</Link>.
             </p>
           </section>
 
-          {/* Section 5 - Team & Contact */}
+          {/* Section 7 - Team & Contact */}
           <section className="border-t border-slate-200 pt-6">
             <h2 className="text-lg font-bold text-slate-900 mb-3">Get in Touch</h2>
             <p className="mb-4">

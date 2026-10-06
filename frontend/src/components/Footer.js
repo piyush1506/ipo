@@ -82,7 +82,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="max-w-[1240px] mx-auto pt-5 border-t border-slate-200 flex flex-wrap justify-between items-center gap-3 text-xs text-slate-400 font-normal">
-        <span suppressHydrationWarning>© {new Date().getFullYear()} pkctechs. All rights reserved. Google AdSense & SEBI compliant.</span>
+        <span suppressHydrationWarning>© {new Date().getFullYear()} pkctechs. All rights reserved. For educational and informational purposes only.</span>
         <div className="flex gap-4">
           <Link href="/privacy-policy" className="hover:text-slate-600 transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>

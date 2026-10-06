@@ -495,19 +495,211 @@ function HomeContent({ initialIpos = [] }) {
             />
           )
         ) : (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
-            <p className="text-sm font-semibold text-slate-800">No IPOs found</p>
-            <p className="text-xs text-slate-500 mt-1 font-normal">Try switching tabs or resetting filters.</p>
-            <button
-              onClick={() => { setActiveTab('OPEN'); setQuickFilter('ALL'); setSearchQuery(''); }}
-              className="btn-dark-primary mt-3.5"
-            >
-              Reset Filters
-            </button>
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-2xs">
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3 text-xl">
+                ⏳
+              </div>
+              <h3 className="text-base font-bold text-slate-800">
+                {activeTab === 'OPEN' ? 'No IPOs Currently Accepting Live Bids Today' : 'No Offerings Match Your Filter'}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1.5 max-w-lg mx-auto leading-relaxed">
+                {activeTab === 'OPEN'
+                  ? 'Indian stock exchange bidding windows operate Monday to Friday (10:00 AM – 5:00 PM IST). You can explore recently listed benchmark offerings or check upcoming issues in the pipeline below.'
+                  : 'Try adjusting your search criteria or resetting filters to view all tracked market issues.'}
+              </p>
+              <div className="flex justify-center gap-3 mt-4">
+                <button
+                  onClick={() => { setActiveTab('CLOSED'); setQuickFilter('ALL'); setSearchQuery(''); }}
+                  className="btn-dark-primary text-xs"
+                >
+                  View Recently Listed IPOs
+                </button>
+                <button
+                  onClick={() => { setActiveTab('UPCOMING'); setQuickFilter('ALL'); setSearchQuery(''); }}
+                  className="px-4 py-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  View Upcoming Pipeline
+                </button>
+              </div>
+            </div>
+
+            {/* Display Benchmark / Recent IPOs so crawlers and visitors always see complete cards */}
+            {ipos.length > 0 && (
+              <div>
+                <h4 className="text-sm font-bold text-slate-800 mb-3">
+                  Benchmark & Recent Indian IPO Issues
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {ipos.slice(0, 6).map(ipo => (
+                    <IpoCard
+                      key={ipo.ipoId || ipo.Symbol}
+                      ipo={ipo}
+                      onViewDetails={handleNavigateToIpo}
+                      onShare={handleShare}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* 7. FAQ Section */}
+        {/* 6. Comprehensive Educational Content Section for AdSense & Investor Awareness */}
+        <section className="mt-14 bg-white rounded-2xl border border-slate-200 p-6 sm:p-10 shadow-2xs space-y-10 text-slate-700">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-800 mb-3">
+              <span>📖 Complete Primary Market Masterclass</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
+              Comprehensive Guide to Indian Initial Public Offerings (IPOs)
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl">
+              An Initial Public Offering (IPO) is the process by which a privately-held Indian company raises capital from retail investors, High Net-worth Individuals (HNIs), and Qualified Institutional Buyers (QIBs) to list its equity shares on the National Stock Exchange (NSE) and Bombay Stock Exchange (BSE).
+            </p>
+          </div>
+
+          {/* 4 Pillars Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed">
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <span>1. Understanding Issue Pricing & Cut-off Price</span>
+              </h3>
+              <p className="text-slate-600">
+                Most Indian IPOs use a <strong>Book Building Process</strong> with a defined price band (e.g., ₹450 to ₹475 per share). Retail investors have the unique privilege of bidding at the <em>"Cut-off Price"</em>, which guarantees their bid will automatically match whatever final price the issuer and book-running lead managers determine upon closing.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <span>2. SEBI ASBA & UPI 2.0 Bidding Framework</span>
+              </h3>
+              <p className="text-slate-600">
+                Under SEBI regulations, physical cheques and direct cash debits are prohibited. Applications must be routed via <strong>ASBA (Application Supported by Blocked Amount)</strong> or <strong>UPI 2.0 Mandates</strong> (up to ₹5,00,000 per application). Your money never leaves your bank account until shares are officially allotted.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <span>3. Mainboard vs. SME Platform IPOs</span>
+              </h3>
+              <p className="text-slate-600">
+                <strong>Mainboard IPOs</strong> feature established enterprises with minimum retail investments of approximately ₹14,000–₹15,000 per lot. In contrast, <strong>SME IPOs</strong> (listed on BSE SME or NSE Emerge) are tailored for early-stage and medium businesses, featuring higher minimum lot values (typically ₹1,00,000 to ₹1,40,000) and strict market maker liquidity provisions.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <span>4. The Allotment Lottery Mechanism & Refunds</span>
+              </h3>
+              <p className="text-slate-600">
+                When an IPO is oversubscribed in the retail category, shares are allotted through an automated, computerized lottery overseen by SEBI and exchange representatives. Every valid retail applicant has an equal chance of receiving one minimum lot. For unallotted applications, the UPI bank mandate hold is automatically revoked within T+2 days.
+              </p>
+            </div>
+          </div>
+
+          {/* Section: How to Analyze an IPO (DRHP/RHP Checklist) */}
+          <div className="border-t border-slate-200 pt-8 space-y-4">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">
+              How to Evaluate an IPO: Fundamental Checklist Before Bidding
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Evaluating an IPO requires analyzing the company’s Draft Red Herring Prospectus (DRHP) filed with SEBI rather than relying on market rumors or unofficial premiums. Here are the 4 fundamental pillars every retail investor should review:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5">
+                <span className="font-bold text-slate-900 block">A. Objects of the Issue (Fresh Issue vs. OFS)</span>
+                <p className="text-slate-500 leading-relaxed">
+                  Look at how much of the capital is a <strong>Fresh Issue</strong> (injected directly into company operations, capex, or debt reduction) versus an <strong>Offer for Sale (OFS)</strong>, where existing promoters or venture funds are monetizing their stake without funds entering the company.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5">
+                <span className="font-bold text-slate-900 block">B. Financial Health & Operating Margins</span>
+                <p className="text-slate-500 leading-relaxed">
+                  Review 3-year restated financials for compound annual growth rates (CAGR) in revenue, EBITDA margins, PAT (Profit After Tax), and Debt-to-Equity ratios. Consistent revenue expansion and positive free cash flows indicate underlying business strength.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5">
+                <span className="font-bold text-slate-900 block">C. Valuation & Peer Comparison</span>
+                <p className="text-slate-500 leading-relaxed">
+                  Compare the issuer's asking Price-to-Earnings (P/E) multiple, Return on Net Worth (RoNW), and Price-to-Book (P/B) value against already-listed domestic industry competitors. An aggressive asking valuation leaves minimal margin of safety for retail listing gains.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5">
+                <span className="font-bold text-slate-900 block">D. Promoter Pedigree & Litigation Risks</span>
+                <p className="text-slate-500 leading-relaxed">
+                  Carefully read Section V ("Risk Factors") in the RHP for pending regulatory lawsuits, promoter pledging, key customer concentration risks, and vendor dependency.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section: Indian Primary Market Glossary */}
+          <div className="border-t border-slate-200 pt-8 space-y-4">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">
+              Key Indian IPO Terminology & Glossary
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                <strong className="text-slate-900 block mb-1">ASBA</strong>
+                <p className="text-slate-500">Application Supported by Blocked Amount. Money stays in your bank account until allotment.</p>
+              </div>
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                <strong className="text-slate-900 block mb-1">RHP (Red Herring Prospectus)</strong>
+                <p className="text-slate-500">Official legal disclosure document detailing business operations, financials, and risks.</p>
+              </div>
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                <strong className="text-slate-900 block mb-1">Cut-Off Price</strong>
+                <p className="text-slate-500">The final issue price determined by the issuer. Retail bidders select this to avoid rejection.</p>
+              </div>
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                <strong className="text-slate-900 block mb-1">Anchor Allocation</strong>
+                <p className="text-slate-500">Institutional allocation (QIBs) finalized 1 day prior to the public opening with lock-in terms.</p>
+              </div>
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                <strong className="text-slate-900 block mb-1">Basis of Allotment</strong>
+                <p className="text-slate-500">Official document published by the registrar detailing oversubscription ratios and lottery winners.</p>
+              </div>
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                <strong className="text-slate-900 block mb-1">T+3 Listing Timeline</strong>
+                <p className="text-slate-500">SEBI mandate requiring equity shares to list on stock exchanges within 3 working days of closing.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Step-by-Step Registrar Verification */}
+          <div className="border-t border-slate-200 pt-8">
+            <h3 className="text-sm font-bold text-slate-900 mb-2">How to Verify Allotment on Official Registrars</h3>
+            <p className="text-xs text-slate-600 leading-relaxed mb-4">
+              Allotment status is compiled by SEBI-registered Registrars and Transfer Agents (RTAs) such as <strong>Link Intime India</strong>, <strong>KFin Technologies</strong>, <strong>Bigshare Services</strong>, and <strong>Maashitla Securities</strong>. To check your status:
+            </p>
+            <ol className="list-decimal pl-5 space-y-1.5 text-xs text-slate-600">
+              <li>Identify the designated registrar from our IPO Detail or Allotment Status page.</li>
+              <li>Click the direct registrar link to open their secure verification portal.</li>
+              <li>Select the company name from the dropdown and enter your PAN number, Application Number, or DP Client ID.</li>
+              <li>Submit to view your allotted share count and refund credit details instantly.</li>
+            </ol>
+          </div>
+        </section>
+
+        {/* 7. Comprehensive Statutory Financial Disclaimer Banner */}
+        <section className="mt-10 bg-amber-50/70 border border-amber-200/90 rounded-2xl p-6 sm:p-8 text-xs text-amber-900/90 space-y-3">
+          <div className="flex items-center gap-2 font-bold text-amber-950 text-sm">
+            <span>⚠️</span> Statutory Regulatory Notice & Financial Risk Disclaimer
+          </div>
+          <p className="leading-relaxed">
+            <strong>pkctechs</strong> is an independent educational and financial market intelligence portal. We are <strong>NOT</strong> registered with the Securities and Exchange Board of India (SEBI) as an Investment Advisor (RIA) or Research Analyst (RA). None of the information, subscription data, calculations, or articles published on this platform constitute investment advice, buy/sell recommendations, or solicitations to participate in public issues.
+          </p>
+          <p className="leading-relaxed">
+            Equity investments and Initial Public Offerings (IPOs) are subject to significant market risks, including the complete loss of invested principal. Historical subscription figures or unofficial Grey Market Premiums (GMP) do not guarantee positive listing gains. Always read the official Red Herring Prospectus (RHP) approved by SEBI and consult a certified SEBI-registered financial planner before making investment decisions.
+          </p>
+        </section>
+
+        {/* 8. FAQ Section */}
         <section className="mt-10">
           <h3 className="text-lg font-bold text-slate-800 mb-4">
             Frequently Asked Questions about IPOs
@@ -517,7 +709,11 @@ function HomeContent({ initialIpos = [] }) {
               { q: 'How do I apply for an IPO using UPI?', a: 'You can apply for any active IPO by entering your UPI ID through your registered stockbroker or ASBA bank account. Once submitted, accept the mandate request on your UPI app (Google Pay, PhonePe, BHIM, etc.) to block the bidding amount.' },
               { q: 'What is the Cut-off Price in an IPO?', a: 'The cut-off price is the final price per share decided by the issuing company and merchant bankers. Individual retail bidders typically bid at the cut-off price to maximize their chances of allotment.' },
               { q: 'What is the difference between Mainboard and SME IPOs?', a: 'Mainboard IPOs are larger companies listed on the main NSE/BSE platforms with typical minimum investments around ₹14,000–₹15,000. SME IPOs are smaller emerging enterprises listed on BSE SME/NSE Emerge with larger lot sizes and minimum investments around ₹1,00,000–₹1,40,000.' },
-              { q: 'When is the blocked money refunded if not allotted?', a: 'If you are not allotted shares, the funds hold is released on the Refund Initiation Date specified in the IPO timetable, typically 1 to 2 working days after the basis of allotment.' }
+              { q: 'When is the blocked money refunded if not allotted?', a: 'If you are not allotted shares, the funds hold is released on the Refund Initiation Date specified in the IPO timetable, typically 1 to 2 working days after the basis of allotment.' },
+              { q: 'Can I apply for multiple lots in an oversubscribed IPO to increase chances?', a: 'Under SEBI retail allotment rules, oversubscribed IPOs are allotted via a computerized randomized lottery where each winner receives exactly one minimum lot. Applying for multiple lots under a single PAN does not increase your mathematical lottery probability.' },
+              { q: 'What is Grey Market Premium (GMP) and is it reliable?', a: 'Grey Market Premium (GMP) is an unofficial, unregulated cash premium traded between private dealers before listing. It is not endorsed by SEBI, BSE, or NSE, and can fluctuate wildly. Investors should never base financial decisions solely on GMP.' },
+              { q: 'What happens during the IPO listing day pre-open session?', a: 'On listing day, a special 45-minute Call Auction session takes place from 9:00 AM to 9:45 AM on NSE and BSE. Orders are matched to discover the official listing opening price before regular trading commences at 10:00 AM.' },
+              { q: 'How do I verify if my IPO application was rejected due to technical errors?', a: 'You can verify rejection reasons by downloading the Bid Confirmation Slip from your broker portal or checking the designated registrar website once the basis of allotment is finalized.' }
             ].map((faq, idx) => (
               <div
                 key={idx}
