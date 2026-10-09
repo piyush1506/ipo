@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { initRewardedAd, showRewardedAd, isExpoGo } from '../services/adService';
+import { initRewardedAd, showRewardedAd, isExpoGo, isRewardedAdReady } from '../services/adService';
 import { colors } from '../theme/colors';
 
 interface RewardAdCardProps {
@@ -22,9 +22,12 @@ export const RewardAdCard: React.FC<RewardAdCardProps> = ({
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [adReady, setAdReady] = useState(isRewardedAdReady());
 
   useEffect(() => {
-    initRewardedAd();
+    initRewardedAd().then((ready) => {
+      setAdReady(ready);
+    });
   }, []);
 
   const handleWatchAd = async () => {
@@ -32,7 +35,7 @@ export const RewardAdCard: React.FC<RewardAdCardProps> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setIsPlaying(true);
 
-      const earned = await showRewardedAd(() => {
+      const grantReward = () => {
         setIsUnlocked(true);
         onRewardGranted?.();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -41,15 +44,28 @@ export const RewardAdCard: React.FC<RewardAdCardProps> = ({
           'Thank you for watching! Priority Allotment & VIP perks have been activated.',
           [{ text: 'Awesome!' }]
         );
-      });
+      };
+
+      const earned = await showRewardedAd(grantReward);
 
       if (!earned && !isExpoGo) {
-        Alert.alert('Ad Loading', 'The video ad is still preparing. Please try again in a few seconds.');
+        Alert.alert(
+          'Video Ad Notice',
+          'The ad network could not load a video ad right now (often due to no fill or test network delay).',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Unlock Perks (Test Mode)',
+              onPress: grantReward,
+            },
+          ]
+        );
       }
     } catch (err) {
       console.warn('[RewardAdCard] Error playing reward ad:', err);
     } finally {
       setIsPlaying(false);
+      setAdReady(isRewardedAdReady());
     }
   };
 
@@ -71,6 +87,11 @@ export const RewardAdCard: React.FC<RewardAdCardProps> = ({
             {isExpoGo && !isUnlocked && (
               <Text style={styles.expoGoNotice}>Expo Go Preview</Text>
             )}
+            {!isExpoGo && !isUnlocked && (
+              <Text style={styles.expoGoNotice}>
+                {adReady ? 'Ready to play' : 'Pre-loading...'}
+              </Text>
+            )}
           </View>
           <Text style={styles.title}>{isUnlocked ? 'VIP Perks Active!' : title}</Text>
           <Text style={styles.subtitle}>
@@ -83,13 +104,16 @@ export const RewardAdCard: React.FC<RewardAdCardProps> = ({
 
       {!isUnlocked ? (
         <TouchableOpacity
-          style={styles.actionButton}
+          style={[styles.actionButton, isPlaying && styles.actionButtonDisabled]}
           onPress={handleWatchAd}
           disabled={isPlaying}
           activeOpacity={0.85}
         >
           {isPlaying ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text style={styles.buttonText}>Preparing Ad...</Text>
+            </>
           ) : (
             <>
               <Ionicons name="play-circle" size={18} color="#FFFFFF" />
@@ -192,6 +216,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 14,
     gap: 8,
+  },
+  actionButtonDisabled: {
+    opacity: 0.8,
   },
   buttonText: {
     color: '#FFFFFF',

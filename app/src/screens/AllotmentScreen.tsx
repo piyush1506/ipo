@@ -16,6 +16,7 @@ import { useAuth } from '../hooks/useAuth';
 import { colors } from '../theme/colors';
 import { AdBanner } from '../components/AdBanner';
 import { TruecallerAdCard } from '../components/TruecallerAdCard';
+import { RewardAdCard } from '../components/RewardAdCard';
 
 export const AllotmentScreen: React.FC = () => {
   const { accounts, addAccount, deleteAccount } = usePanAccounts();
@@ -69,6 +70,10 @@ export const AllotmentScreen: React.FC = () => {
             <Text style={styles.manageButtonText}>Manage PAN profiles ({accounts.length})</Text>
           </TouchableOpacity>
         </View>
+
+        <RewardAdCard
+          style={{ marginHorizontal: 0, marginTop: 10, marginBottom: 4 }}
+        />
 
         <TruecallerAdCard
           adIndex={2}

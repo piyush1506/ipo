@@ -35,130 +35,269 @@ export const BannerAdSize = GoogleMobileAds?.BannerAdSize || {
 export const RealBannerAd = GoogleMobileAds?.BannerAd || null;
 
 /**
- * Helper to show an interstitial ad safely
+ * Initialize Google Mobile Ads SDK
+ */
+let isSdkInitialized = false;
+let sdkInitPromise: Promise<void> | null = null;
+
+export async function initializeMobileAds(): Promise<void> {
+  if (isExpoGo || !GoogleMobileAds) {
+    isSdkInitialized = true;
+    return;
+  }
+
+  if (isSdkInitialized) return;
+  if (sdkInitPromise) return sdkInitPromise;
+
+  sdkInitPromise = (async () => {
+    try {
+      const mobileAds = GoogleMobileAds.default || GoogleMobileAds;
+      if (typeof mobileAds === 'function') {
+        console.log('[AdService] Initializing Google Mobile Ads SDK...');
+        await mobileAds().initialize();
+        isSdkInitialized = true;
+        console.log('[AdService] Google Mobile Ads SDK initialized successfully');
+      }
+    } catch (e) {
+      console.warn('[AdService] Error initializing Google Mobile Ads:', e);
+    }
+  })();
+
+  return sdkInitPromise;
+}
+
+// Auto-trigger SDK initialization in background
+initializeMobileAds().catch(() => {});
+
+/**
+ * Interstitial Ads Management
  */
 let interstitialInstance: any = null;
 let isInterstitialLoaded = false;
+let isInterstitialLoading = false;
 
-export function initInterstitialAd(adUnitId: string = AD_UNIT_IDS.INTERSTITIAL) {
+export async function initInterstitialAd(adUnitId: string = AD_UNIT_IDS.INTERSTITIAL) {
   if (isExpoGo || !GoogleMobileAds?.InterstitialAd) {
-    console.log('[AdService] Interstitial Ad initialized (Mock / Expo Go mode)');
+    return;
+  }
+
+  await initializeMobileAds();
+
+  if (isInterstitialLoaded || isInterstitialLoading) {
     return;
   }
 
   try {
     const { InterstitialAd, AdEventType } = GoogleMobileAds;
+    isInterstitialLoading = true;
     interstitialInstance = InterstitialAd.createForAdRequest(adUnitId, {
       requestNonPersonalizedAdsOnly: true,
     });
 
     interstitialInstance.addAdEventListener(AdEventType.LOADED, () => {
+      console.log('[AdService] Interstitial Ad loaded');
       isInterstitialLoaded = true;
+      isInterstitialLoading = false;
+    });
+
+    interstitialInstance.addAdEventListener(AdEventType.ERROR, (err: any) => {
+      console.warn('[AdService] Interstitial Ad failed to load:', err);
+      isInterstitialLoaded = false;
+      isInterstitialLoading = false;
     });
 
     interstitialInstance.addAdEventListener(AdEventType.CLOSED, () => {
       isInterstitialLoaded = false;
-      // Preload next ad
-      interstitialInstance.load();
+      isInterstitialLoading = false;
+      interstitialInstance = null;
+      // Preload next interstitial in background
+      setTimeout(() => initInterstitialAd(adUnitId), 2000);
     });
 
     interstitialInstance.load();
   } catch (error) {
+    isInterstitialLoading = false;
     console.warn('[AdService] Error creating interstitial ad:', error);
   }
 }
 
-export function showInterstitialAd(): Promise<boolean> {
+export async function showInterstitialAd(): Promise<boolean> {
   if (isExpoGo || !GoogleMobileAds) {
     console.log('[AdService] [Expo Go Preview] Interstitial ad triggered');
-    return Promise.resolve(true);
+    return true;
   }
 
-  return new Promise((resolve) => {
-    if (interstitialInstance && isInterstitialLoaded) {
-      interstitialInstance.show().catch((err: any) => {
-        console.warn('[AdService] Failed to show interstitial ad:', err);
-        resolve(false);
+  if (interstitialInstance && isInterstitialLoaded) {
+    try {
+      await interstitialInstance.show();
+      return true;
+    } catch (err) {
+      console.warn('[AdService] Failed to show interstitial ad:', err);
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Rewarded Ads Management
+ */
+let rewardedInstance: any = null;
+let isRewardedLoaded = false;
+let isRewardedLoading = false;
+let rewardedLoadResolvers: Array<(loaded: boolean) => void> = [];
+
+export function isRewardedAdReady(): boolean {
+  return isExpoGo || isRewardedLoaded;
+}
+
+/**
+ * Prepare and load rewarded ad with automatic retries and error listeners
+ */
+export async function initRewardedAd(adUnitId: string = AD_UNIT_IDS.REWARDED): Promise<boolean> {
+  if (isExpoGo || !GoogleMobileAds?.RewardedAd) {
+    console.log('[AdService] Rewarded Ad initialized (Mock / Expo Go mode)');
+    return true;
+  }
+
+  await initializeMobileAds();
+
+  if (isRewardedLoaded && rewardedInstance) {
+    return true;
+  }
+
+  if (isRewardedLoading) {
+    return new Promise<boolean>((resolve) => {
+      rewardedLoadResolvers.push(resolve);
+    });
+  }
+
+  return new Promise<boolean>((resolve) => {
+    rewardedLoadResolvers.push(resolve);
+
+    try {
+      const { RewardedAd, RewardedAdEventType, AdEventType } = GoogleMobileAds;
+      isRewardedLoading = true;
+      isRewardedLoaded = false;
+
+      console.log('[AdService] Creating RewardedAd for unit ID:', adUnitId);
+      const ad = RewardedAd.createForAdRequest(adUnitId, {
+        requestNonPersonalizedAdsOnly: true,
       });
-      resolve(true);
-    } else {
-      resolve(false);
+      rewardedInstance = ad;
+
+      const notifyAll = (success: boolean) => {
+        isRewardedLoading = false;
+        const resolvers = [...rewardedLoadResolvers];
+        rewardedLoadResolvers = [];
+        resolvers.forEach((r) => r(success));
+      };
+
+      ad.addAdEventListener(RewardedAdEventType.LOADED, () => {
+        console.log('[AdService] ✅ Rewarded Ad successfully loaded and ready to play');
+        isRewardedLoaded = true;
+        notifyAll(true);
+      });
+
+      ad.addAdEventListener(AdEventType.ERROR, (error: any) => {
+        console.warn('[AdService] ❌ Rewarded Ad failed to load:', error);
+        isRewardedLoaded = false;
+        notifyAll(false);
+      });
+
+      ad.load();
+    } catch (error) {
+      console.warn('[AdService] Error creating rewarded ad instance:', error);
+      isRewardedLoading = false;
+      isRewardedLoaded = false;
+      const resolvers = [...rewardedLoadResolvers];
+      rewardedLoadResolvers = [];
+      resolvers.forEach((r) => r(false));
     }
   });
 }
 
 /**
- * Helper to manage Google AdMob Rewarded Ads
+ * Show Rewarded Ad.
+ * If not already loaded, it automatically triggers loading and waits up to 8 seconds.
  */
-let rewardedInstance: any = null;
-let isRewardedLoaded = false;
-
-export function initRewardedAd(adUnitId: string = AD_UNIT_IDS.REWARDED) {
+export async function showRewardedAd(onEarnedReward?: () => void): Promise<boolean> {
   if (isExpoGo || !GoogleMobileAds?.RewardedAd) {
-    console.log('[AdService] Rewarded Ad initialized (Mock / Expo Go mode)');
-    return;
-  }
-
-  try {
-    const { RewardedAd, RewardedAdEventType } = GoogleMobileAds;
-    rewardedInstance = RewardedAd.createForAdRequest(adUnitId, {
-      requestNonPersonalizedAdsOnly: true,
-    });
-
-    rewardedInstance.addAdEventListener(RewardedAdEventType.LOADED, () => {
-      isRewardedLoaded = true;
-    });
-
-    rewardedInstance.load();
-  } catch (error) {
-    console.warn('[AdService] Error creating rewarded ad:', error);
-  }
-}
-
-export function showRewardedAd(onEarnedReward?: () => void): Promise<boolean> {
-  if (isExpoGo || !GoogleMobileAds) {
-    console.log('[AdService] [Expo Go Preview] Rewarded video completed!');
+    console.log('[AdService] [Expo Go Preview] Playing simulated rewarded ad...');
+    // Brief simulated delay for realistic preview UX
+    await new Promise((res) => setTimeout(res, 800));
     onEarnedReward?.();
-    return Promise.resolve(true);
+    return true;
   }
 
-  return new Promise((resolve) => {
-    if (rewardedInstance && isRewardedLoaded) {
-      const { RewardedAdEventType, AdEventType } = GoogleMobileAds;
-      let earned = false;
+  await initializeMobileAds();
 
-      const unsubEarned = rewardedInstance.addAdEventListener(
-        RewardedAdEventType.EARNED_REWARD,
-        () => {
-          earned = true;
-          onEarnedReward?.();
-        }
-      );
+  // If not currently loaded, attempt to load with up to 8-second timeout
+  if (!rewardedInstance || !isRewardedLoaded) {
+    console.log('[AdService] Rewarded ad not loaded yet, loading now before display...');
+    const loadPromise = initRewardedAd();
+    const timeoutPromise = new Promise<boolean>((res) => setTimeout(() => res(false), 8000));
+    const loaded = await Promise.race([loadPromise, timeoutPromise]);
 
-      const unsubClosed = rewardedInstance.addAdEventListener(
-        AdEventType?.CLOSED || 'closed',
-        () => {
-          isRewardedLoaded = false;
-          unsubEarned?.();
-          unsubClosed?.();
-          rewardedInstance?.load();
-          resolve(earned);
-        }
-      );
-
-      rewardedInstance.show().catch((err: any) => {
-        console.warn('[AdService] Failed to show rewarded ad:', err);
-        unsubEarned?.();
-        unsubClosed?.();
-        resolve(false);
-      });
-    } else {
-      console.log('[AdService] Rewarded ad not loaded yet, requesting load...');
-      rewardedInstance?.load();
-      resolve(false);
+    if (!loaded || !rewardedInstance || !isRewardedLoaded) {
+      console.warn('[AdService] Rewarded ad failed to load within timeout');
+      return false;
     }
+  }
+
+  const ad = rewardedInstance;
+  const { RewardedAdEventType, AdEventType } = GoogleMobileAds;
+
+  return new Promise<boolean>((resolve) => {
+    let earned = false;
+    let unsubEarned: (() => void) | null = null;
+    let unsubClosed: (() => void) | null = null;
+    let unsubError: (() => void) | null = null;
+
+    const cleanup = () => {
+      unsubEarned?.();
+      unsubClosed?.();
+      unsubError?.();
+      isRewardedLoaded = false;
+      rewardedInstance = null;
+      // Pre-load the next rewarded ad in background
+      setTimeout(() => initRewardedAd(), 1500);
+    };
+
+    unsubEarned = ad.addAdEventListener(
+      RewardedAdEventType.EARNED_REWARD,
+      () => {
+        console.log('[AdService] 🏆 User earned rewarded ad perk!');
+        earned = true;
+        onEarnedReward?.();
+      }
+    );
+
+    unsubClosed = ad.addAdEventListener(
+      AdEventType?.CLOSED || 'closed',
+      () => {
+        console.log('[AdService] Rewarded ad closed. Reward earned status:', earned);
+        cleanup();
+        resolve(earned);
+      }
+    );
+
+    unsubError = ad.addAdEventListener(
+      AdEventType?.ERROR || 'error',
+      (err: any) => {
+        console.warn('[AdService] Error during rewarded ad playback:', err);
+        cleanup();
+        resolve(false);
+      }
+    );
+
+    ad.show().catch((err: any) => {
+      console.warn('[AdService] ad.show() rejected:', err);
+      cleanup();
+      resolve(false);
+    });
   });
 }
 
 export { isExpoGo };
-

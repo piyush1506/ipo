@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -13,9 +13,16 @@ import { colors } from './src/theme/colors';
 
 import { AuthProvider } from './src/hooks/useAuth';
 import { useNotifications } from './src/hooks/useNotifications';
+import { initializeMobileAds, initRewardedAd } from './src/services/adService';
 
 function AppContent() {
   useNotifications();
+
+  useEffect(() => {
+    initializeMobileAds().then(() => {
+      initRewardedAd();
+    });
+  }, []);
   const [currentTab, setCurrentTab] = useState<NavigationTab>('HOME');
   const [selectedIpo, setSelectedIpo] = useState<IpoItem | null>(null);
   const [allotmentIpo, setAllotmentIpo] = useState<IpoItem | null>(null);
