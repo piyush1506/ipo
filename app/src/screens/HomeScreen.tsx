@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,13 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  ScrollView,
+  useWindowDimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useIpos } from '../hooks/useIpos';
 import { useWatchlist } from '../hooks/useWatchlist';
 import { IpoItem } from '../types/ipo';
@@ -34,6 +39,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const { ipos, loading, refreshing, refresh } = useIpos();
   const { watchlist, toggleWatchlist, isSaved } = useWatchlist();
+  const { width } = useWindowDimensions();
 
   // Search & Filters State
   const [activeTab, setActiveTab] = useState<TabType>('OPEN');
@@ -48,6 +54,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [isAllotmentModalOpen, setIsAllotmentModalOpen] = useState<boolean>(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState<boolean>(false);
 
+  // Pager & Tab Bar Refs
+  const pagerRef = useRef<ScrollView>(null);
+  const tabBarRef = useRef<FlatList>(null);
+
   // Tab counts
   const tabCounts = useMemo(() => {
     const counts = { OPEN: 0, UPCOMING: 0, CLOSED: 0, WATCHLIST: watchlist.length, ALL: ipos.length };
@@ -60,74 +70,135 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     return counts;
   }, [ipos, watchlist]);
 
-  const isShowingUpcomingFallback =
-    activeTab === 'OPEN' && tabCounts.OPEN === 0 && tabCounts.UPCOMING > 0;
-  const displayedTab: TabType = isShowingUpcomingFallback ? 'UPCOMING' : activeTab;
+  // Tabs definition
+  const LIFECYCLE_TABS = useMemo(
+    () => [
+      { id: 'OPEN' as TabType, label: 'Live Now', count: tabCounts.OPEN, icon: 'flame' as const },
+      { id: 'UPCOMING' as TabType, label: 'Upcoming', count: tabCounts.UPCOMING, icon: 'calendar-outline' as const },
+      { id: 'CLOSED' as TabType, label: 'Closed', count: tabCounts.CLOSED, icon: 'checkmark-done-outline' as const },
+      { id: 'WATCHLIST' as TabType, label: 'Watchlist', count: tabCounts.WATCHLIST, icon: 'bookmark-outline' as const },
+      { id: 'ALL' as TabType, label: 'All Issues', count: tabCounts.ALL, icon: 'grid-outline' as const },
+    ],
+    [tabCounts]
+  );
 
-  // Filtered & Sorted IPOs
-  const filteredIpos = useMemo(() => {
-    let list = [...ipos];
+  // Filter & Sort per tab
+  const filterAndSort = useCallback(
+    (targetTab: TabType) => {
+      let list = [...ipos];
 
-    // 1. Primary Lifecycle Tab Filter
-    if (displayedTab === 'OPEN') {
-      list = list.filter((i) => (i.status || '').toUpperCase() === 'OPEN');
-    } else if (displayedTab === 'UPCOMING') {
-      list = list.filter((i) => (i.status || '').toUpperCase() === 'UPCOMING');
-    } else if (displayedTab === 'CLOSED') {
-      list = list.filter((i) => (i.status || '').toUpperCase() === 'CLOSED');
-    } else if (displayedTab === 'WATCHLIST') {
-      list = list.filter((i) => watchlist.includes(i.ipoId));
-    }
-
-    // 2. Exchange / Market Segment Filter
-    if (selectedType === 'MAINBOARD') {
-      list = list.filter((i) => (i.issueType || '').toUpperCase() !== 'SME');
-    } else if (selectedType === 'SME') {
-      list = list.filter((i) => (i.issueType || '').toUpperCase() === 'SME');
-    }
-
-    // 3. Search Query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (i) =>
-          (i.companyName || '').toLowerCase().includes(q) ||
-          (i.ipoName || '').toLowerCase().includes(q) ||
-          (i.Symbol || '').toLowerCase().includes(q) ||
-          (i.industry || '').toLowerCase().includes(q)
-      );
-    }
-
-    // 4. Sorting
-    list.sort((a, b) => {
-      if (selectedSort === 'DATE_DESC') {
-        const da = a.closedate ? new Date(a.closedate).getTime() : 0;
-        const db = b.closedate ? new Date(b.closedate).getTime() : 0;
-        return db - da;
+      if (targetTab === 'OPEN') {
+        list = list.filter((i) => (i.status || '').toUpperCase() === 'OPEN');
+      } else if (targetTab === 'UPCOMING') {
+        list = list.filter((i) => (i.status || '').toUpperCase() === 'UPCOMING');
+      } else if (targetTab === 'CLOSED') {
+        list = list.filter((i) => (i.status || '').toUpperCase() === 'CLOSED');
+      } else if (targetTab === 'WATCHLIST') {
+        list = list.filter((i) => watchlist.includes(i.ipoId));
       }
-      if (selectedSort === 'DATE_ASC') {
-        const da = a.closedate ? new Date(a.closedate).getTime() : Infinity;
-        const db = b.closedate ? new Date(b.closedate).getTime() : Infinity;
-        return da - db;
-      }
-      if (selectedSort === 'SIZE_DESC') {
-        return Number(b.issuesize || 0) - Number(a.issuesize || 0);
-      }
-      if (selectedSort === 'SUB_DESC') {
-        const subA = typeof a.totalSubscription === 'number' ? a.totalSubscription : parseFloat(String(a.totalSubscription || '0')) || 0;
-        const subB = typeof b.totalSubscription === 'number' ? b.totalSubscription : parseFloat(String(b.totalSubscription || '0')) || 0;
-        return subB - subA;
-      }
-      if (selectedSort === 'NAME_ASC') {
-        return (a.companyName || '').localeCompare(b.companyName || '');
-      }
-      return 0;
-    });
 
-    return list;
-  }, [ipos, displayedTab, selectedType, searchQuery, selectedSort, watchlist]);
+      if (selectedType === 'MAINBOARD') {
+        list = list.filter((i) => (i.issueType || '').toUpperCase() !== 'SME');
+      } else if (selectedType === 'SME') {
+        list = list.filter((i) => (i.issueType || '').toUpperCase() === 'SME');
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        list = list.filter(
+          (i) =>
+            (i.companyName || '').toLowerCase().includes(q) ||
+            (i.ipoName || '').toLowerCase().includes(q) ||
+            (i.Symbol || '').toLowerCase().includes(q) ||
+            (i.industry || '').toLowerCase().includes(q)
+        );
+      }
+
+      list.sort((a, b) => {
+        if (selectedSort === 'DATE_DESC') {
+          const da = a.closedate ? new Date(a.closedate).getTime() : 0;
+          const db = b.closedate ? new Date(b.closedate).getTime() : 0;
+          return db - da;
+        }
+        if (selectedSort === 'DATE_ASC') {
+          const da = a.closedate ? new Date(a.closedate).getTime() : Infinity;
+          const db = b.closedate ? new Date(b.closedate).getTime() : Infinity;
+          return da - db;
+        }
+        if (selectedSort === 'SIZE_DESC') {
+          return Number(b.issuesize || 0) - Number(a.issuesize || 0);
+        }
+        if (selectedSort === 'SUB_DESC') {
+          const subA =
+            typeof a.totalSubscription === 'number'
+              ? a.totalSubscription
+              : parseFloat(String(a.totalSubscription || '0')) || 0;
+          const subB =
+            typeof b.totalSubscription === 'number'
+              ? b.totalSubscription
+              : parseFloat(String(b.totalSubscription || '0')) || 0;
+          return subB - subA;
+        }
+        if (selectedSort === 'NAME_ASC') {
+          return (a.companyName || '').localeCompare(b.companyName || '');
+        }
+        return 0;
+      });
+
+      return list;
+    },
+    [ipos, selectedType, searchQuery, selectedSort, watchlist]
+  );
+
+  const tabDataMap = useMemo(() => {
+    return {
+      OPEN: filterAndSort('OPEN'),
+      UPCOMING: filterAndSort('UPCOMING'),
+      CLOSED: filterAndSort('CLOSED'),
+      WATCHLIST: filterAndSort('WATCHLIST'),
+      ALL: filterAndSort('ALL'),
+    };
+  }, [filterAndSort]);
 
   const activeFilterCount = (selectedType !== 'ALL' ? 1 : 0) + (selectedSort !== 'DATE_DESC' ? 1 : 0);
+  const activeListCount = tabDataMap[activeTab]?.length || 0;
+
+  // Handle Tab Click (Smooth scroll to page)
+  const handleSelectTab = (tabId: TabType, index: number) => {
+    Haptics.selectionAsync();
+    setActiveTab(tabId);
+    pagerRef.current?.scrollTo({ x: index * width, animated: true });
+    try {
+      tabBarRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+    } catch {}
+  };
+
+  // Handle Finger Slide (Momentum Scroll End on Pager)
+  const handlePageScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / width);
+    if (newIndex >= 0 && newIndex < LIFECYCLE_TABS.length) {
+      const newTab = LIFECYCLE_TABS[newIndex].id;
+      if (newTab !== activeTab) {
+        Haptics.selectionAsync();
+        setActiveTab(newTab);
+        try {
+          tabBarRef.current?.scrollToIndex({ index: newIndex, animated: true, viewPosition: 0.5 });
+        } catch {}
+      }
+    }
+  };
+
+  // Auto center active tab chip on orientation/width changes
+  useEffect(() => {
+    const idx = LIFECYCLE_TABS.findIndex((t) => t.id === activeTab);
+    if (idx >= 0) {
+      pagerRef.current?.scrollTo({ x: idx * width, animated: false });
+      try {
+        tabBarRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 });
+      } catch {}
+    }
+  }, [width]);
 
   const handleOpenDetail = (ipo: IpoItem) => {
     if (onSelectIpo) {
@@ -145,6 +216,45 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       setSelectedIpo(ipo);
       setIsAllotmentModalOpen(true);
     }
+  };
+
+  const renderEmptyState = (tabId: TabType) => {
+    if (tabId === 'OPEN' && tabCounts.OPEN === 0 && tabCounts.UPCOMING > 0) {
+      return (
+        <View style={styles.emptyState}>
+          <Ionicons name="calendar-outline" size={48} color={colors.primary} />
+          <Text style={styles.emptyTitle}>No IPO Open Today</Text>
+          <Text style={styles.emptySubtitle}>
+            There are no IPOs actively taking subscriptions today. Swipe left 👉 to explore upcoming offerings!
+          </Text>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => handleSelectTab('UPCOMING', 1)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.retryBtnText}>View Upcoming IPOs →</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.emptyState}>
+        <Ionicons name="folder-open-outline" size={48} color={colors.textMuted} />
+        <Text style={styles.emptyTitle}>No IPOs Found</Text>
+        <Text style={styles.emptySubtitle}>
+          {searchQuery
+            ? `No IPO matches "${searchQuery}". Try different keywords.`
+            : tabId === 'WATCHLIST'
+            ? 'Your watchlist is empty. Tap the bookmark icon on any IPO card to save it.'
+            : 'No active offerings in this category at the moment.'}
+        </Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={refresh}>
+          <Ionicons name="refresh" size={16} color="#FFFFFF" />
+          <Text style={styles.retryBtnText}>Refresh Live Feed</Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   return (
@@ -165,30 +275,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         activeFilterCount={activeFilterCount}
       />
 
-      {/* Primary Lifecycle Status Tabs */}
+      {/* Primary Lifecycle Status Tabs (WhatsApp-style Top Swipe Bar) */}
       <View style={styles.tabsContainer}>
         <FlatList
+          ref={tabBarRef}
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={[
-            { id: 'OPEN', label: 'Live Now', count: tabCounts.OPEN, icon: 'flame' },
-            { id: 'UPCOMING', label: 'Upcoming', count: tabCounts.UPCOMING, icon: 'calendar-outline' },
-            { id: 'CLOSED', label: 'Closed', count: tabCounts.CLOSED, icon: 'checkmark-done-outline' },
-            { id: 'WATCHLIST', label: 'Watchlist', count: tabCounts.WATCHLIST, icon: 'bookmark-outline' },
-            { id: 'ALL', label: 'All Issues', count: tabCounts.ALL, icon: 'grid-outline' },
-          ]}
+          data={LIFECYCLE_TABS}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.tabsScroll}
-          renderItem={({ item }) => {
-            const isActive = displayedTab === item.id;
+          onScrollToIndexFailed={() => {}}
+          renderItem={({ item, index }) => {
+            const isActive = activeTab === item.id;
             return (
               <TouchableOpacity
                 style={[styles.tabChip, isActive && styles.tabChipActive]}
-                onPress={() => setActiveTab(item.id as TabType)}
+                onPress={() => handleSelectTab(item.id, index)}
                 activeOpacity={0.7}
               >
                 <Ionicons
-                  name={item.icon as any}
+                  name={item.icon}
                   size={14}
                   color={isActive ? '#FFFFFF' : colors.textSecondary}
                 />
@@ -233,22 +339,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           })}
         </View>
 
-        {/* Clean Count Pill (No icons) */}
+        {/* Clean Count Pill */}
         <View style={styles.countBadgePill}>
-          <Text style={styles.countBadgePillText}>{filteredIpos.length} IPOs</Text>
+          <Text style={styles.countBadgePillText}>{activeListCount} IPOs</Text>
         </View>
       </View>
 
-      {isShowingUpcomingFallback && (
-        <View style={styles.upcomingFallbackBanner}>
-          <Ionicons name="calendar-outline" size={15} color={colors.primaryDark} />
-          <Text style={styles.upcomingFallbackText}>
-            No IPO is live right now. Showing upcoming IPOs instead.
-          </Text>
-        </View>
-      )}
-
-      {/* IPO List Feed */}
+      {/* Swipeable Horizontal Pager (WhatsApp-Style Finger Slider) */}
       {loading && ipos.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -256,64 +353,71 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <Text style={styles.loadingSubtitle}>Fetching dynamic IPO data from Render backend</Text>
         </View>
       ) : (
-        <FlatList
-          data={filteredIpos}
-          keyExtractor={(item) => item.ipoId || item.Symbol || Math.random().toString()}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            <View>
-              <AdBanner style={{ marginBottom: 6 }} />
-              <TruecallerAdCard
-                adIndex={0}
-                style={{ marginHorizontal: 0, marginBottom: 8 }}
-              />
-            </View>
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={refresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          }
-          renderItem={({ item, index }) => (
-            <>
-              <IpoCard
-                ipo={item}
-                onPress={() => handleOpenDetail(item)}
-                onAllotmentPress={() => handleOpenAllotment(item)}
-                isSaved={isSaved(item.ipoId)}
-                onToggleSave={() => toggleWatchlist(item.ipoId)}
-              />
-              {index === 2 && (
-                <TruecallerAdCard
-                  adIndex={1}
-                  variant="compact"
-                  style={{ marginHorizontal: 0, marginVertical: 6 }}
+        <ScrollView
+          ref={pagerRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          directionalLockEnabled
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="handled"
+          onMomentumScrollEnd={handlePageScrollEnd}
+          style={styles.pager}
+        >
+          {LIFECYCLE_TABS.map((tab, tabIndex) => {
+            const list = tabDataMap[tab.id];
+            return (
+              <View key={tab.id} style={[styles.pageContainer, { width }]}>
+                <FlatList
+                  data={list}
+                  keyExtractor={(item) => `${tab.id}-${item.ipoId || item.Symbol || Math.random().toString()}`}
+                  contentContainerStyle={styles.listContent}
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled
+                  keyboardShouldPersistTaps="handled"
+                  ListHeaderComponent={
+                    tabIndex === 0 ? (
+                      <View>
+                        <AdBanner style={{ marginBottom: 6 }} />
+                        <TruecallerAdCard
+                          adIndex={0}
+                          style={{ marginHorizontal: 0, marginBottom: 8 }}
+                        />
+                      </View>
+                    ) : null
+                  }
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={refresh}
+                      tintColor={colors.primary}
+                      colors={[colors.primary]}
+                    />
+                  }
+                  renderItem={({ item, index }) => (
+                    <>
+                      <IpoCard
+                        ipo={item}
+                        onPress={() => handleOpenDetail(item)}
+                        onAllotmentPress={() => handleOpenAllotment(item)}
+                        isSaved={isSaved(item.ipoId)}
+                        onToggleSave={() => toggleWatchlist(item.ipoId)}
+                      />
+                      {index === 2 && (
+                        <TruecallerAdCard
+                          adIndex={tabIndex + 1}
+                          variant="compact"
+                          style={{ marginHorizontal: 0, marginVertical: 6 }}
+                        />
+                      )}
+                    </>
+                  )}
+                  ListEmptyComponent={() => renderEmptyState(tab.id)}
                 />
-              )}
-            </>
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="folder-open-outline" size={48} color={colors.textMuted} />
-              <Text style={styles.emptyTitle}>No IPOs Found</Text>
-              <Text style={styles.emptySubtitle}>
-                {searchQuery
-                  ? `No IPO matches "${searchQuery}". Try different keywords.`
-                  : displayedTab === 'WATCHLIST'
-                  ? 'Your watchlist is empty. Tap the bookmark icon on any IPO card to save it.'
-                  : 'No active offerings in this category at the moment.'}
-              </Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={refresh}>
-                <Ionicons name="refresh" size={16} color="#FFFFFF" />
-                <Text style={styles.retryBtnText}>Refresh Live Feed</Text>
-              </TouchableOpacity>
-            </View>
-          }
-        />
+              </View>
+            );
+          })}
+        </ScrollView>
       )}
 
       {/* Detail Modal */}
@@ -413,26 +517,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: colors.background,
   },
-  upcomingFallbackBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-    backgroundColor: colors.primaryLight,
-  },
-  upcomingFallbackText: {
-    flex: 1,
-    fontSize: 11.5,
-    lineHeight: 16,
-    fontWeight: '600',
-    color: colors.primaryDark,
-  },
   segmentControl: {
     flexDirection: 'row',
     backgroundColor: 'transparent',
@@ -472,6 +556,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: colors.textSecondary,
+  },
+  pager: {
+    flex: 1,
+  },
+  pageContainer: {
+    flex: 1,
   },
   listContent: {
     paddingHorizontal: 16,
