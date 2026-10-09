@@ -58,7 +58,11 @@ export const IpoCard: React.FC<IpoCardProps> = ({
   const hasSubscription = !isNaN(subVal) && subVal > 0;
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.88}
+    >
       {/* Top Bar: Company Details & Groww Bookmark */}
       <View style={styles.headerRow}>
         <View style={styles.companyInfoRow}>
@@ -85,19 +89,22 @@ export const IpoCard: React.FC<IpoCardProps> = ({
           </View>
         </View>
 
-        {onToggleSave && (
-          <TouchableOpacity
-            style={styles.starButton}
-            onPress={onToggleSave}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name={isSaved ? 'bookmark' : 'bookmark-outline'}
-              size={19}
-              color={isSaved ? colors.primary : colors.textMuted}
-            />
-          </TouchableOpacity>
-        )}
+        <View style={styles.headerRight}>
+          {onToggleSave && (
+            <TouchableOpacity
+              style={styles.starButton}
+              onPress={onToggleSave}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons
+                name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                size={19}
+                color={isSaved ? colors.primary : colors.textMuted}
+              />
+            </TouchableOpacity>
+          )}
+          <Ionicons name="chevron-forward" size={15} color={colors.textMuted} style={{ marginLeft: 2 }} />
+        </View>
       </View>
 
       {/* Dynamic Status Pill & GMP / Issue Size in Groww Tag Layout */}
@@ -190,57 +197,40 @@ export const IpoCard: React.FC<IpoCardProps> = ({
         </View>
       </View>
 
-      {/* Status-Aware Action Buttons */}
-      <View style={styles.actionsRow}>
+      {/* Compact Quick Action for Closed IPOs only */}
+      {isClosed && (
         <TouchableOpacity
-          style={[styles.detailButton, isUpcoming && styles.fullWidthDetailBtn]}
-          onPress={onPress}
+          style={styles.allotmentQuickBtn}
+          onPress={onAllotmentPress}
           activeOpacity={0.8}
         >
-          <Ionicons
-            name={isUpcoming ? 'calendar-outline' : 'stats-chart-outline'}
-            size={14}
-            color={colors.textHeading}
-          />
-          <Text style={styles.detailButtonText}>
-            {isUpcoming ? 'View Details' : 'Details'}
-          </Text>
+          <Ionicons name="search" size={13} color="#FFFFFF" />
+          <Text style={styles.allotmentQuickBtnText}>Check Allotment Status</Text>
+          <Ionicons name="chevron-forward" size={12} color="#FFFFFF" />
         </TouchableOpacity>
-
-        {!isUpcoming && (
-          <TouchableOpacity
-            style={[styles.allotmentButton, isOpen && styles.liveBiddingBtn]}
-            onPress={isClosed ? onAllotmentPress : onPress}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name={isClosed ? 'search' : 'flame'}
-              size={14}
-              color="#FFFFFF"
-            />
-            <Text style={styles.allotmentButtonText}>
-              {isClosed ? 'Check Allotment' : 'Live Bidding'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
+      )}
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    padding: 16,
-    marginBottom: 14,
+    padding: 14,
+    marginBottom: 10,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 2,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   headerRow: {
     flexDirection: 'row',
@@ -461,53 +451,18 @@ const styles = StyleSheet.create({
     height: 18,
     backgroundColor: colors.border,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    marginTop: 14,
-    gap: 10,
-  },
-  detailButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceLight,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 6,
-  },
-  fullWidthDetailBtn: {
-    flex: 1,
-    backgroundColor: '#EEF2FF',
-    borderColor: '#C7D2FE',
-  },
-  detailButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textHeading,
-  },
-  allotmentButton: {
-    flex: 1.1,
+  allotmentQuickBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
-    paddingVertical: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
     borderRadius: 10,
+    marginTop: 10,
     gap: 6,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  liveBiddingBtn: {
-    backgroundColor: '#2563EB',
-    shadowColor: '#2563EB',
-  },
-  allotmentButtonText: {
+  allotmentQuickBtnText: {
     fontSize: 12,
     fontWeight: '800',
     color: '#FFFFFF',
