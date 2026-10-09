@@ -139,6 +139,27 @@ async function executeSyncIPOs() {
 
     // Bulk upsert into MongoDB using bulkWrite for maximum speed
     if (require('mongoose').connection.readyState === 1 && validIpos.length > 0) {
+      // 1. Fetch existing to compare statuses
+      const existingIpos = await Ipo.find({ ipoId: { $in: validIpos.map(i => i.ipoId) } }).lean();
+      const existingMap = new Map(existingIpos.map(i => [i.ipoId, i]));
+      
+      const { notifyAllUsers } = require('./notificationService');
+
+      // 2. Trigger notifications if status changed
+      for (const ipoData of validIpos) {
+        const existing = existingMap.get(ipoData.ipoId);
+        if (existing && existing.status !== ipoData.status) {
+          if (ipoData.status === 'Open') {
+            await notifyAllUsers('IPO Opened! 🚀', `${ipoData.companyName} is now open for subscription.`, { ipoId: ipoData.ipoId });
+          } else if (ipoData.status === 'Allotted') {
+            await notifyAllUsers('Allotment Declared! 🎉', `The allotment for ${ipoData.companyName} is out. Check your status!`, { ipoId: ipoData.ipoId });
+          } else if (ipoData.status === 'Listed') {
+            await notifyAllUsers('IPO Listed! 📈', `${ipoData.companyName} has just been listed.`, { ipoId: ipoData.ipoId });
+          }
+        }
+      }
+
+      // 3. Save to database
       const ops = validIpos.map(ipoData => ({
         updateOne: {
           filter: { ipoId: ipoData.ipoId },

@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const IPO = require('./models/ipo');
 const connectDB = require('./config/db');
 const { SyncIPOs } = require('./services/iposervices');
+const { discoverCompanyLogo } = require('./services/logoService');
 
 const app = express();
 
@@ -12,7 +13,7 @@ app.use(cors({
   origin: '*',
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // In-Memory High-Speed Cache with Stale-While-Revalidate (SWR)
 const memoryCache = {
@@ -68,6 +69,58 @@ app.get('/api/health', (req, res) => {
     dbState: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     cacheStatus: memoryCache.ipos ? 'warm' : 'cold',
     cachedCount: memoryCache.ipos ? memoryCache.ipos.length : 0
+  });
+});
+
+// Discover, validate, proxy, and cache a company logo. The service only probes
+// bounded domain candidates derived from the company name/symbol; it does not
+// accept an arbitrary target URL.
+app.get(['/api/company-logo', '/api/v1/company-logo'], async (req, res) => {
+  const companyName = String(req.query.companyName || '').trim();
+  const symbol = String(req.query.symbol || '').trim();
+
+  if (companyName.length < 2 || companyName.length > 160 || symbol.length > 30) {
+    return res.status(400).json({ success: false, message: 'A valid company name is required.' });
+  }
+
+  try {
+    const logo = await discoverCompanyLogo(companyName, symbol);
+    res.setHeader('X-Logo-Cache', logo.cacheStatus);
+    if (!logo.data || !logo.contentType) {
+      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=21600');
+      return res.status(404).json({ success: false, message: 'Company logo was not found.' });
+    }
+
+    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800');
+    res.setHeader('Content-Type', logo.contentType);
+    return res.send(logo.data);
+  } catch (error) {
+    return res.status(502).json({ success: false, message: error.message || 'Logo discovery failed.' });
+  }
+});
+
+// Allotment checking is intentionally disabled until an official data
+// provider agreement and API credentials are available. Keep this contract
+// stable so mobile/web clients can ship the PAN-management UI without ever
+// fabricating a financial result or using an unapproved external source.
+const ALLOTMENT_UNAVAILABLE_MESSAGE =
+  'Automatic allotment checks are awaiting official data API approval.';
+
+app.get(['/api/allotment/capabilities', '/api/v1/allotment/capabilities'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    available: false,
+    mode: 'disabled',
+    message: ALLOTMENT_UNAVAILABLE_MESSAGE
+  });
+});
+
+app.post(['/api/allotment/check', '/api/v1/allotment/check'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(503).json({
+    success: false,
+    code: 'ALLOTMENT_PROVIDER_NOT_CONFIGURED',
+    message: ALLOTMENT_UNAVAILABLE_MESSAGE
   });
 });
 
@@ -286,6 +339,215 @@ app.post(['/api/sync', '/api/v1/sync-ipos'], async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+});
+
+// Admin endpoint to upload/override logo
+app.post(['/api/admin/company-logo', '/api/v1/admin/company-logo'], async (req, res) => {
+  try {
+    const syncApiKey = process.env.SYNC_API_KEY;
+    const authorization = req.get('authorization') || '';
+    const suppliedKey = req.get('x-sync-key') || authorization.replace(/^Bearer\s+/i, '');
+
+    if (!syncApiKey || suppliedKey !== syncApiKey) {
+      return res.status(401).json({ success: false, message: 'Unauthorized request.' });
+    }
+
+    const { companyName, symbol, base64Image, contentType } = req.body;
+    
+    if (!companyName || !base64Image || !contentType) {
+      return res.status(400).json({ success: false, message: 'companyName, base64Image, and contentType are required.' });
+    }
+
+    const { normalizeKey, invalidateCache } = require('./services/logoService');
+    const key = normalizeKey(companyName, symbol || '');
+    
+    const buffer = Buffer.from(base64Image, 'base64');
+    
+    const CustomLogo = require('./models/CustomLogo');
+    await CustomLogo.findOneAndUpdate(
+      { key },
+      { data: buffer, contentType, uploadedAt: Date.now() },
+      { upsert: true, new: true }
+    );
+
+    invalidateCache(key);
+
+    return res.json({ success: true, message: 'Logo successfully overridden.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.delete(['/api/admin/company-logo', '/api/v1/admin/company-logo'], async (req, res) => {
+  try {
+    const syncApiKey = process.env.SYNC_API_KEY;
+    const authorization = req.get('authorization') || '';
+    const suppliedKey = req.get('x-sync-key') || authorization.replace(/^Bearer\s+/i, '');
+
+    if (!syncApiKey || suppliedKey !== syncApiKey) {
+      return res.status(401).json({ success: false, message: 'Unauthorized request.' });
+    }
+
+    const companyName = String(req.query.companyName || '');
+    const symbol = String(req.query.symbol || '');
+    
+    if (!companyName) {
+      return res.status(400).json({ success: false, message: 'companyName is required.' });
+    }
+
+    const { normalizeKey, invalidateCache } = require('./services/logoService');
+    const key = normalizeKey(companyName, symbol);
+    
+    const CustomLogo = require('./models/CustomLogo');
+    await CustomLogo.findOneAndDelete({ key });
+
+    invalidateCache(key);
+
+    return res.json({ success: true, message: 'Custom logo successfully removed.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Admin endpoint to manually send push notifications
+app.post(['/api/admin/notify', '/api/v1/admin/notify'], async (req, res) => {
+  try {
+    const syncApiKey = process.env.SYNC_API_KEY;
+    const authorization = req.get('authorization') || '';
+    const suppliedKey = req.get('x-sync-key') || authorization.replace(/^Bearer\s+/i, '');
+
+    if (!syncApiKey || suppliedKey !== syncApiKey) {
+      return res.status(401).json({ success: false, message: 'Unauthorized request.' });
+    }
+
+    const { title, body, data } = req.body;
+    if (!title || !body) {
+      return res.status(400).json({ success: false, message: 'title and body are required.' });
+    }
+
+    const { notifyAllUsers } = require('./services/notificationService');
+    const count = await notifyAllUsers(title, body, data || {});
+
+    return res.json({ success: true, message: `Notification sent to ${count} devices.` });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// --- User & PAN Management ---
+const User = require('./models/User');
+
+// Login or register user with Google info
+app.post(['/api/users/auth', '/api/v1/users/auth'], async (req, res) => {
+  try {
+    const { email, name, googleId, picture } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (user) {
+      // Update googleId and picture if they were missing
+      let updated = false;
+      if (googleId && !user.googleId) { user.googleId = googleId; updated = true; }
+      if (picture && !user.picture) { user.picture = picture; updated = true; }
+      if (name && !user.name) { user.name = name; updated = true; }
+      
+      if (updated) {
+        await user.save();
+      }
+    } else {
+      user = new User({ email, name, googleId, picture, pans: [] });
+      await user.save();
+    }
+
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update Push Token
+app.post(['/api/users/:id/push-token', '/api/v1/users/:id/push-token'], async (req, res) => {
+  try {
+    const { pushToken } = req.body;
+    if (!pushToken) {
+      return res.status(400).json({ success: false, message: 'pushToken is required' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.expoPushToken = pushToken;
+    await user.save();
+    
+    res.json({ success: true, message: 'Push token updated' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get user's PANs
+app.get(['/api/users/:id/pans', '/api/v1/users/:id/pans'], async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.json({ success: true, data: user.pans });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Add a PAN for a user
+app.post(['/api/users/:id/pans', '/api/v1/users/:id/pans'], async (req, res) => {
+  try {
+    const { panNumber, name } = req.body;
+    
+    if (!panNumber) {
+      return res.status(400).json({ success: false, message: 'PAN number is required' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Check if PAN already exists
+    const exists = user.pans.some(p => p.panNumber.toUpperCase() === panNumber.toUpperCase());
+    if (exists) {
+      return res.status(400).json({ success: false, message: 'PAN number already added' });
+    }
+
+    user.pans.push({ panNumber, name });
+    await user.save();
+    
+    res.json({ success: true, data: user.pans });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Delete a PAN
+app.delete(['/api/users/:id/pans/:panId', '/api/v1/users/:id/pans/:panId'], async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    user.pans = user.pans.filter(p => p._id.toString() !== req.params.panId);
+    await user.save();
+    
+    res.json({ success: true, data: user.pans });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
