@@ -24,7 +24,6 @@ import { IpoDetailModal } from '../components/IpoDetailModal';
 import { AllotmentCheckerModal } from '../components/AllotmentCheckerModal';
 import { FilterModal, SortOption, TypeOption } from '../components/FilterModal';
 import { AdBanner } from '../components/AdBanner';
-import { TruecallerAdCard } from '../components/TruecallerAdCard';
 
 type TabType = 'OPEN' | 'UPCOMING' | 'CLOSED' | 'WATCHLIST' | 'ALL';
 
@@ -57,6 +56,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Pager & Tab Bar Refs
   const pagerRef = useRef<ScrollView>(null);
   const tabBarRef = useRef<FlatList>(null);
+  const activeTabRef = useRef<TabType>('OPEN');
+  const isTappingRef = useRef<boolean>(false);
 
   // Tab counts
   const tabCounts = useMemo(() => {
@@ -163,25 +164,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const activeFilterCount = (selectedType !== 'ALL' ? 1 : 0) + (selectedSort !== 'DATE_DESC' ? 1 : 0);
   const activeListCount = tabDataMap[activeTab]?.length || 0;
 
-  // Handle Tab Click (Smooth scroll to page)
+  // Instant Tab Click: Immediately updates state and scrolls pager
   const handleSelectTab = (tabId: TabType, index: number) => {
-    Haptics.selectionAsync();
+    isTappingRef.current = true;
+    activeTabRef.current = tabId;
     setActiveTab(tabId);
+    Haptics.selectionAsync();
     pagerRef.current?.scrollTo({ x: index * width, animated: true });
     try {
       tabBarRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
     } catch {}
+    setTimeout(() => {
+      isTappingRef.current = false;
+    }, 350);
   };
 
-  // Handle Finger Slide (Momentum Scroll End on Pager)
-  const handlePageScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  // Instant Swipe Tracker: updates the top bar in real-time as finger slides
+  const handlePagerScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (isTappingRef.current || width <= 0) return;
     const offsetX = e.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / width);
     if (newIndex >= 0 && newIndex < LIFECYCLE_TABS.length) {
       const newTab = LIFECYCLE_TABS[newIndex].id;
-      if (newTab !== activeTab) {
-        Haptics.selectionAsync();
+      if (newTab !== activeTabRef.current) {
+        activeTabRef.current = newTab;
         setActiveTab(newTab);
+        Haptics.selectionAsync();
         try {
           tabBarRef.current?.scrollToIndex({ index: newIndex, animated: true, viewPosition: 0.5 });
         } catch {}
@@ -219,40 +227,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const renderEmptyState = (tabId: TabType) => {
-    if (tabId === 'OPEN' && tabCounts.OPEN === 0 && tabCounts.UPCOMING > 0) {
-      return (
-        <View style={styles.emptyState}>
-          <Ionicons name="calendar-outline" size={48} color={colors.primary} />
-          <Text style={styles.emptyTitle}>No IPO Open Today</Text>
-          <Text style={styles.emptySubtitle}>
-            There are no IPOs actively taking subscriptions today. Swipe left 👉 to explore upcoming offerings!
-          </Text>
-          <TouchableOpacity
-            style={styles.retryBtn}
-            onPress={() => handleSelectTab('UPCOMING', 1)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.retryBtnText}>View Upcoming IPOs →</Text>
-          </TouchableOpacity>
-        </View>
-      );
+    let message = 'No active offerings in this category at the moment.';
+    if (tabId === 'OPEN') {
+      message = 'No IPO is currently open for bidding today. Swipe left to explore upcoming offerings.';
+    } else if (tabId === 'WATCHLIST') {
+      message = 'Your watchlist is empty. Tap the bookmark icon on any IPO card to save it.';
+    } else if (searchQuery) {
+      message = `No IPO matches "${searchQuery}". Try different keywords.`;
     }
 
     return (
       <View style={styles.emptyState}>
-        <Ionicons name="folder-open-outline" size={48} color={colors.textMuted} />
+        <Ionicons name="folder-open-outline" size={42} color={colors.textMuted} />
         <Text style={styles.emptyTitle}>No IPOs Found</Text>
-        <Text style={styles.emptySubtitle}>
-          {searchQuery
-            ? `No IPO matches "${searchQuery}". Try different keywords.`
-            : tabId === 'WATCHLIST'
-            ? 'Your watchlist is empty. Tap the bookmark icon on any IPO card to save it.'
-            : 'No active offerings in this category at the moment.'}
-        </Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={refresh}>
-          <Ionicons name="refresh" size={16} color="#FFFFFF" />
-          <Text style={styles.retryBtnText}>Refresh Live Feed</Text>
-        </TouchableOpacity>
+        <Text style={styles.emptySubtitle}>{message}</Text>
       </View>
     );
   };
@@ -275,7 +263,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         activeFilterCount={activeFilterCount}
       />
 
-      {/* Primary Lifecycle Status Tabs (WhatsApp-style Top Swipe Bar) */}
+      {/* Primary Lifecycle Status Tabs (Instant WhatsApp-style Top Swipe Bar) */}
       <View style={styles.tabsContainer}>
         <FlatList
           ref={tabBarRef}
@@ -345,7 +333,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
       </View>
 
-      {/* Swipeable Horizontal Pager (WhatsApp-Style Finger Slider) */}
+      {/* Swipeable Horizontal Pager (Instant Real-time Finger Slider) */}
       {loading && ipos.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -360,8 +348,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           showsHorizontalScrollIndicator={false}
           directionalLockEnabled
           nestedScrollEnabled
+          scrollEventThrottle={16}
+          onScroll={handlePagerScroll}
           keyboardShouldPersistTaps="handled"
-          onMomentumScrollEnd={handlePageScrollEnd}
           style={styles.pager}
         >
           {LIFECYCLE_TABS.map((tab, tabIndex) => {
@@ -377,13 +366,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   keyboardShouldPersistTaps="handled"
                   ListHeaderComponent={
                     tabIndex === 0 ? (
-                      <View>
-                        <AdBanner style={{ marginBottom: 6 }} />
-                        <TruecallerAdCard
-                          adIndex={0}
-                          style={{ marginHorizontal: 0, marginBottom: 8 }}
-                        />
-                      </View>
+                      <AdBanner style={{ marginBottom: 6 }} />
                     ) : null
                   }
                   refreshControl={
@@ -394,23 +377,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       colors={[colors.primary]}
                     />
                   }
-                  renderItem={({ item, index }) => (
-                    <>
-                      <IpoCard
-                        ipo={item}
-                        onPress={() => handleOpenDetail(item)}
-                        onAllotmentPress={() => handleOpenAllotment(item)}
-                        isSaved={isSaved(item.ipoId)}
-                        onToggleSave={() => toggleWatchlist(item.ipoId)}
-                      />
-                      {index === 2 && (
-                        <TruecallerAdCard
-                          adIndex={tabIndex + 1}
-                          variant="compact"
-                          style={{ marginHorizontal: 0, marginVertical: 6 }}
-                        />
-                      )}
-                    </>
+                  renderItem={({ item }) => (
+                    <IpoCard
+                      ipo={item}
+                      onPress={() => handleOpenDetail(item)}
+                      onAllotmentPress={() => handleOpenAllotment(item)}
+                      isSaved={isSaved(item.ipoId)}
+                      onToggleSave={() => toggleWatchlist(item.ipoId)}
+                    />
                   )}
                   ListEmptyComponent={() => renderEmptyState(tab.id)}
                 />
@@ -590,10 +564,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 60,
     paddingHorizontal: 30,
-    gap: 12,
+    gap: 10,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     color: colors.text,
   },
@@ -602,20 +576,5 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
-  },
-  retryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
-    marginTop: 8,
-  },
-  retryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
   },
 });

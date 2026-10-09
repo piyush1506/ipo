@@ -196,19 +196,6 @@ export const IpoCard: React.FC<IpoCardProps> = ({
           <Text style={styles.dateValue}>{formatDate(ipo.listingdate)}</Text>
         </View>
       </View>
-
-      {/* Compact Quick Action for Closed IPOs only */}
-      {isClosed && (
-        <TouchableOpacity
-          style={styles.allotmentQuickBtn}
-          onPress={onAllotmentPress}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="search" size={13} color="#FFFFFF" />
-          <Text style={styles.allotmentQuickBtnText}>Check Allotment Status</Text>
-          <Ionicons name="chevron-forward" size={12} color="#FFFFFF" />
-        </TouchableOpacity>
-      )}
     </TouchableOpacity>
   );
 };
@@ -450,21 +437,5 @@ const styles = StyleSheet.create({
     width: 1,
     height: 18,
     backgroundColor: colors.border,
-  },
-  allotmentQuickBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    marginTop: 10,
-    gap: 6,
-  },
-  allotmentQuickBtnText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#FFFFFF',
   },
 });

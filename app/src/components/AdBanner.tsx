@@ -34,18 +34,8 @@ export const AdBanner: React.FC<AdBannerProps> = ({
     );
   }
 
-  // Preview / Expo Go fallback banner
-  return (
-    <View style={[styles.container, styles.mockContainer, style]}>
-      <View style={styles.adBadge}>
-        <Text style={styles.adBadgeText}>Ad</Text>
-      </View>
-      <Text style={styles.mockTitle}>Google AdMob Banner</Text>
-      <Text style={styles.mockSubtitle}>
-        {isExpoGo ? 'Preview Mode (Active in Dev/Prod APK)' : 'Test Ad Unit'}
-      </Text>
-    </View>
-  );
+  // Only render real native ad if available; otherwise return null (no hardcoded mock ads)
+  return null;
 };
 
 const styles = StyleSheet.create({
