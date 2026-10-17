@@ -11,6 +11,11 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
   const handleNavClick = (tabId) => {
     setMobileMenuOpen(false);
 
+    if (tabId === 'ALLOTMENT') {
+      router.push('/allotment-status');
+      return;
+    }
+
     if (tabId === 'GUIDE') {
       router.push('/ipo-guide');
       return;
@@ -49,6 +54,7 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
     { id: 'UPCOMING', label: 'Upcoming', hasPulse: false },
     { id: 'CLOSED', label: 'Recently Listed', hasPulse: false },
     { id: 'SME', label: 'SME Platform', hasPulse: false },
+    { id: 'ALLOTMENT', label: 'Allotment Status', hasPulse: false },
     { id: 'BLOG', label: 'IPO Blog & Guides', hasPulse: false },
   ];
 
@@ -121,6 +127,7 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
         <nav className="hidden md:flex items-center gap-4 lg:gap-5">
           {navLinks.map((item) => {
             const isActive =
+              (item.id === 'ALLOTMENT' && pathname === '/allotment-status') ||
               (item.id === 'BLOG' && pathname.startsWith('/blog')) ||
               (item.id === 'GUIDE' && pathname === '/ipo-guide') ||
               (pathname === '/' && activeTab === item.id);

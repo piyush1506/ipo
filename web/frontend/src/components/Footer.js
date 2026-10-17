@@ -50,6 +50,7 @@ export default function Footer() {
             Official Registrars
           </h4>
           <ul className="list-none flex flex-col gap-2.5 text-xs font-normal">
+            <li><Link href="/allotment-status" className="text-slate-900 font-semibold hover:text-slate-700 transition-colors">All Registrars Directory ➔</Link></li>
             <li><a href="https://linkintime.co.in/initial_offer/public-issues.html" target="_blank" rel="noopener noreferrer" className="text-slate-600 hover:text-slate-900 transition-colors">Link Intime India ↗</a></li>
             <li><a href="https://ris.kfintech.com/ipostatus/" target="_blank" rel="noopener noreferrer" className="text-slate-600 hover:text-slate-900 transition-colors">KFin Technologies ↗</a></li>
             <li><a href="https://www.bigshareonline.com/ipo_Allotment.html" target="_blank" rel="noopener noreferrer" className="text-slate-600 hover:text-slate-900 transition-colors">Bigshare Services ↗</a></li>
