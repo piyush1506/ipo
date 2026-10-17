@@ -3,7 +3,7 @@ import { FALLBACK_IPOS } from '../data/fallbackIpos';
 
 const getApiBase = () => {
   if (typeof window !== 'undefined') return '';
-  return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+  return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.pkctechs.in').replace(/\/$/, '');
 };
 
 const STORAGE_KEY = 'pkc_ipos_cache_v2';
@@ -180,7 +180,7 @@ export async function fetchIPODetails(id, forceRefresh = false) {
 // Indian Rupee currency formatting for funds
 export function formatCurrency(amount) {
   if (amount === undefined || amount === null || isNaN(amount) || Number(amount) <= 0) {
-    return 'Price TBA';
+    return 'To Be Announced';
   }
   return `₹${Math.round(Number(amount)).toLocaleString('en-IN')}`;
 }
@@ -198,7 +198,7 @@ export function formatCrores(amount) {
 }
 
 export function formatDate(dateStr) {
-  if (!dateStr) return 'TBA';
+  if (!dateStr) return 'To Be Announced';
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
@@ -220,6 +220,25 @@ export function getDaysRemainingBadge(opendate, closedate, status) {
   }
 
   const now = new Date();
+
+  // 1. Check if IPO has not opened yet
+  if (opendate) {
+    const open = new Date(opendate);
+    const diffTime = open - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays > 0) {
+      return {
+        text: diffDays === 1 ? '⚡ Opens Tomorrow' : `Opens in ${diffDays}d`,
+        type: 'upcoming',
+      };
+    }
+  }
+
+  if (normStatus === 'UPCOMING') {
+    return { text: 'Upcoming', type: 'upcoming' };
+  }
+
+  // 2. Active / Closing countdown logic
   if (closedate) {
     const close = new Date(closedate);
     const diffTime = close - now;
@@ -229,13 +248,6 @@ export function getDaysRemainingBadge(opendate, closedate, status) {
     if (diffDays === 1) return { text: '⚡ Closes Tomorrow', type: 'urgent' };
     if (diffDays > 1 && diffDays <= 7) return { text: `Closes in ${diffDays}d`, type: 'active' };
     if (diffDays < 0) return { text: 'Bidding Closed', type: 'closed' };
-  }
-
-  if (opendate) {
-    const open = new Date(opendate);
-    const diffTime = open - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays > 0) return { text: `Opens in ${diffDays}d`, type: 'upcoming' };
   }
 
   return { text: normStatus === 'OPEN' ? 'Open Now' : 'Upcoming', type: 'active' };
@@ -319,7 +331,7 @@ export function generateIpoEditorial(ipo) {
       { label: 'Total Issue Size', value: issueSizeStr },
       { label: 'Fresh Issue Shares', value: sharesCountStr },
       { label: 'Face Value', value: `${faceValueStr} per share` },
-      { label: 'Price Band', value: minP > 0 && maxP > 0 ? (minP === maxP ? `₹${minP}` : `₹${minP} - ₹${maxP}`) : 'TBA' },
+      { label: 'Price Band', value: minP > 0 && maxP > 0 ? (minP === maxP ? `₹${minP}` : `₹${minP} - ₹${maxP}`) : 'To Be Announced' },
       { label: 'Retail Min. Investment', value: `${formatCurrency(minInvestment)} (${lotSize} Shares)` },
       { label: 'Lead Manager', value: leadManager },
       { label: 'Registrar', value: registrarName },

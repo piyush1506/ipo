@@ -138,7 +138,7 @@ export default function IpoCard({ ipo, onViewDetails, onShare }) {
         <section className="border-b border-slate-200 pb-3">
           <p className="text-xs font-medium text-slate-500">Minimum Investment</p>
           <p className={`mt-1 text-2xl font-extrabold leading-none tracking-[-0.035em] ${styles.accentText}`}>
-            {minInvestment > 0 ? formatCurrency(minInvestment) : 'Price TBA'}
+            {minInvestment > 0 ? formatCurrency(minInvestment) : 'To Be Announced'}
           </p>
           <p className="mt-2 text-xs font-medium text-slate-500">
             {lotSize > 0 ? `1 Lot · ${lotSize.toLocaleString('en-IN')} Shares` : 'Lot size to be announced'}
@@ -151,19 +151,19 @@ export default function IpoCard({ ipo, onViewDetails, onShare }) {
             <p className="mt-1 text-sm font-bold leading-snug text-slate-900">
               {minPrice > 0 && maxPrice > 0
                 ? minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice}–${maxPrice}`
-                : maxPrice > 0 ? `₹${maxPrice}` : 'TBA'}
+                : maxPrice > 0 ? `₹${maxPrice}` : 'To Be Announced'}
             </p>
           </div>
           <div className="px-3">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Lot Size</p>
             <p className="mt-1 text-sm font-bold leading-snug text-slate-900">
-              {lotSize > 0 ? lotSize.toLocaleString('en-IN') : 'TBA'}
+              {lotSize > 0 ? lotSize.toLocaleString('en-IN') : 'To Be Announced'}
             </p>
           </div>
           <div className="pl-3">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Issue Size</p>
             <p className="mt-1 text-sm font-bold leading-snug text-slate-900">
-              {ipo.issuesize > 0 ? formatCrores(ipo.issuesize) : 'TBA'}
+              {ipo.issuesize > 0 ? formatCrores(ipo.issuesize) : 'To Be Announced'}
             </p>
           </div>
         </section>

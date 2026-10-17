@@ -362,7 +362,7 @@ function HomeContent({ initialIpos = [] }) {
                         {ipo.companyName || ipo.ipoName}
                       </h4>
                       <p className="text-xs text-slate-500 mt-0.5 font-normal">
-                        Min. Inv: <span className="font-semibold text-slate-700">{minInv > 0 ? formatCurrency(minInv) : 'Price TBA'}</span> • {ipo.totalSubscription || '0.0'}x Subscribed
+                        Min. Inv: <span className="font-semibold text-slate-700">{minInv > 0 ? formatCurrency(minInv) : 'To Be Announced'}</span> • {ipo.totalSubscription || '0.0'}x Subscribed
                       </p>
                     </div>
                   </div>

@@ -117,10 +117,10 @@ export default function IpoTableView({ ipos, onViewDetails, onShare }) {
                   <td className="py-4 px-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-semibold text-slate-800">
-                        {isClosed ? `${lotSize} Shares` : minInvestment > 0 ? formatCurrency(minInvestment) : 'Price TBA'}
+                        {isClosed ? `${lotSize} Shares` : minInvestment > 0 ? formatCurrency(minInvestment) : 'To Be Announced'}
                       </span>
                       <span className="text-[11px] text-slate-400 font-normal">
-                        {isClosed ? 'Minimum Lot Size' : lotSize > 0 ? `${lotSize} Shares (1 Lot)` : 'Lot size TBA'}
+                        {isClosed ? 'Minimum Lot Size' : lotSize > 0 ? `${lotSize} Shares (1 Lot)` : 'Lot size To Be Announced'}
                       </span>
                     </div>
                   </td>
@@ -128,7 +128,7 @@ export default function IpoTableView({ ipos, onViewDetails, onShare }) {
                   {/* Issue Size */}
                   <td className="py-4 px-4">
                     <span className="text-xs font-medium text-slate-600">
-                      {ipo.issuesize > 0 ? formatCrores(ipo.issuesize) : 'TBA'}
+                      {ipo.issuesize > 0 ? formatCrores(ipo.issuesize) : 'To Be Announced'}
                     </span>
                   </td>
 

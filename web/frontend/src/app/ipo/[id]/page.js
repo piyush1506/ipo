@@ -488,7 +488,7 @@ export default function IpoDetailPage() {
             <p>
               <strong className="text-slate-900 font-semibold">{companyName}</strong> is set issue{' '}
               <span className="text-slate-800 font-medium">price band</span> at{' '}
-              <strong className="text-slate-900 font-semibold">{minPrice > 0 && maxPrice > 0 ? (minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice} to ₹${maxPrice}`) : 'TBA'} per share</strong>. The{' '}
+              <strong className="text-slate-900 font-semibold">{minPrice > 0 && maxPrice > 0 ? (minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice} to ₹${maxPrice}`) : 'To Be Announced'} per share</strong>. The{' '}
               <span className="text-slate-800 font-medium">lot size</span> for an application is{' '}
               <strong className="text-slate-900 font-semibold">{lotSize} shares</strong>. The minimum amount of investment required by an{' '}
               <span className="text-slate-800 font-medium">individual investor (retail)</span> is{' '}

@@ -102,7 +102,7 @@ export default function IpoDetailModal({ ipo, onClose }) {
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <div className="text-base sm:text-lg font-bold text-slate-800">
-                {minInvestment > 0 ? formatCurrency(minInvestment) : 'Price TBA'}
+                {minInvestment > 0 ? formatCurrency(minInvestment) : 'To Be Announced'}
                 <span className="text-xs font-normal text-slate-500 ml-1">/{lotSize} shares</span>
               </div>
               <div className="text-[11px] text-slate-400 font-normal">
@@ -146,7 +146,7 @@ export default function IpoDetailModal({ ipo, onClose }) {
                 Bidding opened on <strong className="text-slate-800 font-semibold">{formatDate(ipo.opendate)}</strong> and closes on <strong className="text-slate-800 font-semibold">{formatDate(ipo.closedate)}</strong>. Allotment is expected on <strong className="text-slate-800 font-semibold">{formatDate(ipo.allotmentdate)}</strong>, listing on <strong className="text-slate-800 font-semibold">{Array.isArray(ipo.exchange) ? ipo.exchange.join(' & ') : 'NSE & BSE'}</strong> tentatively on <strong className="text-slate-800 font-semibold">{formatDate(ipo.listingdate)}</strong>.
               </p>
               <p>
-                Price band is set at <strong className="text-slate-800 font-semibold">{minPrice > 0 && maxPrice > 0 ? `₹${minPrice} to ₹${maxPrice}` : 'TBA'} per share</strong>. Minimum investment required by retail investors is <strong className="text-slate-800 font-semibold">{formatCurrency(minInvestment)}</strong> for {lotSize} shares (1 lot).
+                Price band is set at <strong className="text-slate-800 font-semibold">{minPrice > 0 && maxPrice > 0 ? `₹${minPrice} to ₹${maxPrice}` : 'To Be Announced'} per share</strong>. Minimum investment required by retail investors is <strong className="text-slate-800 font-semibold">{formatCurrency(minInvestment)}</strong> for {lotSize} shares (1 lot).
               </p>
               <p className="text-slate-500">
                 Lead Manager: <strong className="text-slate-700 font-semibold">{ipo.leadManager || 'Choice Capital Advisors Pvt.Ltd.'}</strong> • Registrar: <strong className="text-slate-700 font-semibold">{ipo.registrarInfo?.name || ipo.registrar || 'Bigshare Services Pvt.Ltd.'}</strong>
