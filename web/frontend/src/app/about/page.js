@@ -6,7 +6,7 @@ export const metadata = {
   title: 'About Us | pkctechs IPO Intelligence Platform',
   description: 'Learn about pkctechs, our mission to simplify Indian IPO tracking, real-time data streaming architecture, editorial standards, and our team.',
   alternates: {
-    canonical: 'https://www.pkctechs.com/about',
+    canonical: 'https://pkctechs.in/about',
   },
 };
 

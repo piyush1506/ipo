@@ -230,7 +230,7 @@ export default function IpoDetailPage() {
         provider: {
           '@type': 'Organization',
           name: 'pkctechs',
-          url: 'https://www.pkctechs.com'
+          url: 'https://pkctechs.in'
         },
         offers: {
           '@type': 'Offer',
@@ -246,19 +246,19 @@ export default function IpoDetailPage() {
             '@type': 'ListItem',
             position: 1,
             name: 'Home',
-            item: 'https://www.pkctechs.com'
+            item: 'https://pkctechs.in'
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'IPOs',
-            item: 'https://www.pkctechs.com/?tab=OPEN'
+            item: 'https://pkctechs.in/?tab=OPEN'
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: `${companyName} IPO Details`,
-            item: typeof window !== 'undefined' ? window.location.href : `https://www.pkctechs.com/ipo/${ipo.ipoId || ipo.Symbol}`
+            item: typeof window !== 'undefined' ? window.location.href : `https://pkctechs.in/ipo/${ipo.ipoId || ipo.Symbol}`
           }
         ]
       }

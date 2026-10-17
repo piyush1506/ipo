@@ -6,7 +6,7 @@ export const metadata = {
   title: 'Financial & Legal Disclaimer | pkctechs IPO Intelligence',
   description: 'Important legal disclosure, market risk warnings, non-SEBI registration declaration, and limitation of liability for pkctechs IPO platform.',
   alternates: {
-    canonical: 'https://www.pkctechs.com/disclaimer',
+    canonical: 'https://pkctechs.in/disclaimer',
   },
 };
 
@@ -59,7 +59,7 @@ export default function DisclaimerPage() {
             </h2>
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs text-slate-700">
               <p>
-                <strong>pkctechs (pkctechs.com)</strong> is an independent software tool and financial information portal.
+                <strong>pkctechs (pkctechs.in)</strong> is an independent software tool and financial information portal.
               </p>
               <p>
                 <strong>pkctechs is NOT registered with the Securities and Exchange Board of India (SEBI)</strong> under SEBI (Research Analysts) Regulations, 2014, SEBI (Investment Advisers) Regulations, 2013, or any other SEBI rules or statutory provisions.
@@ -156,7 +156,7 @@ export default function DisclaimerPage() {
               Release of Legal Action & Limitation of Liability
             </h2>
             <p className="mb-3">
-              BY USING PKCTECHS.COM, YOU EXPRESSLY AGREE THAT:
+              BY USING PKCTECHS.IN, YOU EXPRESSLY AGREE THAT:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-xs text-slate-600">
               <li>
@@ -182,9 +182,9 @@ export default function DisclaimerPage() {
             </p>
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-xs text-slate-700 space-y-1.5">
               <p><strong>Platform:</strong> pkctechs IPO Intelligence Platform</p>
-              <p><strong>Compliance Email:</strong> <a href="mailto:compliance@pkctechs.com" className="text-slate-900 font-semibold underline">compliance@pkctechs.com</a></p>
-              <p><strong>General Support:</strong> <a href="mailto:support@pkctechs.com" className="text-slate-900 font-semibold underline">support@pkctechs.com</a></p>
-              <p><strong>Direct Inquiries:</strong> <Link href="/contact" className="text-slate-900 font-semibold underline">pkctechs.com/contact</Link></p>
+              <p><strong>Compliance Email:</strong> <a href="mailto:compliance@pkctechs.in" className="text-slate-900 font-semibold underline">compliance@pkctechs.in</a></p>
+              <p><strong>General Support:</strong> <a href="mailto:support@pkctechs.in" className="text-slate-900 font-semibold underline">support@pkctechs.in</a></p>
+              <p><strong>Direct Inquiries:</strong> <Link href="/contact" className="text-slate-900 font-semibold underline">pkctechs.in/contact</Link></p>
             </div>
           </section>
         </div>

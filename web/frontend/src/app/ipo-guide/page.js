@@ -6,7 +6,7 @@ export const metadata = {
   title: 'Complete IPO Allotment & Bidding Guide 2026 | pkctechs',
   description: 'Master Indian IPOs: How allotment works, SEBI lottery rules, step-by-step PAN checking on Link Intime & KFintech, ASBA UPI mandate timeline, and Mainboard vs SME.',
   alternates: {
-    canonical: 'https://www.pkctechs.com/ipo-guide',
+    canonical: 'https://pkctechs.in/ipo-guide',
   },
 };
 

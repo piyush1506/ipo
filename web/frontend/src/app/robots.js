@@ -1,5 +1,5 @@
 export default function robots() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pkctechs.com';
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://pkctechs.in').replace(/\/$/, '');
   return {
     rules: [
       {

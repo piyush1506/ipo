@@ -6,7 +6,7 @@ export const metadata = {
   title: 'Cookie Policy | pkctechs IPO Intelligence',
   description: 'Understand how pkctechs and Google AdSense utilize cookies, web beacons, and local storage to optimize performance and serve ads.',
   alternates: {
-    canonical: 'https://www.pkctechs.com/cookie-policy',
+    canonical: 'https://pkctechs.in/cookie-policy',
   },
 };
 
@@ -34,7 +34,7 @@ export default function CookiePolicyPage() {
             Cookie Policy
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-            Effective Date: {lastUpdated} &nbsp;•&nbsp; Explaining how pkctechs.com uses cookies and tracking technologies.
+            Effective Date: {lastUpdated} &nbsp;•&nbsp; Explaining how pkctechs.in uses cookies and tracking technologies.
           </p>
         </div>
 
@@ -124,7 +124,7 @@ export default function CookiePolicyPage() {
               If you have any questions regarding our use of cookies or tracking technologies, please contact us at:
             </p>
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-700">
-              <p>Email: <a href="mailto:privacy@pkctechs.com" className="text-slate-900 font-semibold underline">privacy@pkctechs.com</a></p>
+              <p>Email: <a href="mailto:privacy@pkctechs.in" className="text-slate-900 font-semibold underline">privacy@pkctechs.in</a></p>
               <p className="mt-1">More information: <Link href="/privacy-policy" className="text-slate-900 font-semibold underline">Privacy Policy</Link></p>
             </div>
           </section>

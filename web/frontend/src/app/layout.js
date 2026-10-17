@@ -10,7 +10,7 @@ const inter = Inter({
   weight: ['400', '500', '600', '700'],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pkctechs.com';
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://pkctechs.in').replace(/\/$/, '');
 
 export const metadata = {
   metadataBase: new URL(siteUrl),

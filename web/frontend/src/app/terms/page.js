@@ -4,9 +4,9 @@ import Footer from '../../components/Footer';
 
 export const metadata = {
   title: 'Terms & Conditions | pkctechs IPO Intelligence',
-  description: 'Read the terms of service, conditions of use, limitation of liability, and legal disclaimers governing the use of pkctechs.com IPO information platform.',
+  description: 'Read the terms of service, conditions of use, limitation of liability, and legal disclaimers governing the use of pkctechs.in IPO information platform.',
   alternates: {
-    canonical: 'https://www.pkctechs.com/terms',
+    canonical: 'https://pkctechs.in/terms',
   },
 };
 
@@ -47,8 +47,8 @@ export default function TermsPage() {
               Agreement to Terms
             </h2>
             <p className="mb-3">
-              These Terms and Conditions (&ldquo;Terms&rdquo;) constitute a legally binding agreement between you (&ldquo;User,&rdquo; &ldquo;you,&rdquo; or &ldquo;your&rdquo;) and <strong>pkctechs</strong> (&ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our,&rdquo; or &ldquo;pkctechs.com&rdquo;), concerning your access to and use of the website{' '}
-              <a href="https://www.pkctechs.com" className="text-slate-900 font-medium underline">https://www.pkctechs.com</a>, including any related mobile web apps, widgets, or data APIs (collectively, the &ldquo;Platform&rdquo;).
+              These Terms and Conditions (&ldquo;Terms&rdquo;) constitute a legally binding agreement between you (&ldquo;User,&rdquo; &ldquo;you,&rdquo; or &ldquo;your&rdquo;) and <strong>pkctechs</strong> (&ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our,&rdquo; or &ldquo;pkctechs.in&rdquo;), concerning your access to and use of the website{' '}
+              <a href="https://pkctechs.in" className="text-slate-900 font-medium underline">https://pkctechs.in</a>, including any related mobile web apps, widgets, or data APIs (collectively, the &ldquo;Platform&rdquo;).
             </p>
             <p>
               By accessing, browsing, or using pkctechs, you acknowledge that you have read, understood, and agree to be bound by all of these Terms and our{' '}
@@ -85,7 +85,7 @@ export default function TermsPage() {
               <li>Rejection, technical failure, UPI mandate delay, or non-allotment of IPO shares by any registrar, banker, exchange, or broker.</li>
               <li>Inaccuracies, omissions, typographical errors, or latency in subscription rates, lot size tables, listing dates, or price bands.</li>
               <li>Server downtime, interruptions, API feed delays, transmission failures, or software bugs.</li>
-              <li>Actions taken or decisions made based on data, articles, or tools available on pkctechs.com.</li>
+              <li>Actions taken or decisions made based on data, articles, or tools available on pkctechs.in.</li>
             </ul>
             <p className="mt-3 text-xs text-slate-600">
               You agree to waive, release, and hold harmless pkctechs and its operators from any claims, suits, demands, disputes, or legal actions arising out of your use of or inability to use this platform.
@@ -190,9 +190,9 @@ export default function TermsPage() {
             </p>
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-xs text-slate-700 space-y-1.5">
               <p><strong>Platform:</strong> pkctechs IPO Intelligence Platform</p>
-              <p><strong>Official Legal Inquiries:</strong> <a href="mailto:legal@pkctechs.com" className="text-slate-900 font-semibold underline">legal@pkctechs.com</a></p>
-              <p><strong>General Support:</strong> <a href="mailto:support@pkctechs.com" className="text-slate-900 font-semibold underline">support@pkctechs.com</a></p>
-              <p><strong>Direct Contact Form:</strong> <Link href="/contact" className="text-slate-900 font-semibold underline">pkctechs.com/contact</Link></p>
+              <p><strong>Official Legal Inquiries:</strong> <a href="mailto:legal@pkctechs.in" className="text-slate-900 font-semibold underline">legal@pkctechs.in</a></p>
+              <p><strong>General Support:</strong> <a href="mailto:support@pkctechs.in" className="text-slate-900 font-semibold underline">support@pkctechs.in</a></p>
+              <p><strong>Direct Contact Form:</strong> <Link href="/contact" className="text-slate-900 font-semibold underline">pkctechs.in/contact</Link></p>
             </div>
           </section>
         </div>

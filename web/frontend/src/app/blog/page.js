@@ -42,18 +42,18 @@ export default function BlogIndexPage() {
     '@type': 'Blog',
     name: 'pkctechs IPO Investor Insights & Market Guides',
     description: 'Expert guides, allotment strategies, and regulatory insights on Indian Primary Equity Markets.',
-    url: 'https://www.pkctechs.com/blog',
+    url: 'https://pkctechs.in/blog',
     publisher: {
       '@type': 'Organization',
       name: 'pkctechs',
-      url: 'https://www.pkctechs.com',
-      logo: 'https://www.pkctechs.com/icon.svg',
+      url: 'https://pkctechs.in',
+      logo: 'https://pkctechs.in/icon.svg',
     },
     blogPost: allPosts.map((post) => ({
       '@type': 'BlogPosting',
       headline: post.title,
       description: post.summary,
-      url: `https://www.pkctechs.com/blog/${post.slug}`,
+      url: `https://pkctechs.in/blog/${post.slug}`,
       datePublished: post.publishDate,
       author: {
         '@type': 'Organization',

@@ -22,7 +22,7 @@ export async function generateMetadata({ params }) {
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pkctechs.com';
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://pkctechs.in').replace(/\/$/, '');
   const url = `${baseUrl}/blog/${post.slug}`;
 
   return {
@@ -57,7 +57,7 @@ export default async function BlogPostPage({ params }) {
   }
 
   const relatedPosts = getRelatedBlogPosts(slug, 3);
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pkctechs.com';
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://pkctechs.in').replace(/\/$/, '');
 
   // Article JSON-LD Structured Data
   const articleSchema = {

@@ -62,8 +62,8 @@ export default function ContactPage() {
                 <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                   General Inquiries
                 </span>
-                <a href="mailto:support@pkctechs.com" className="text-xs text-slate-800 hover:text-slate-900 font-medium underline">
-                  support@pkctechs.com
+                <a href="mailto:support@pkctechs.in" className="text-xs text-slate-800 hover:text-slate-900 font-medium underline">
+                  support@pkctechs.in
                 </a>
               </div>
 
@@ -71,8 +71,8 @@ export default function ContactPage() {
                 <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                   Legal & Compliance
                 </span>
-                <a href="mailto:legal@pkctechs.com" className="text-xs text-slate-800 hover:text-slate-900 font-medium underline">
-                  legal@pkctechs.com
+                <a href="mailto:legal@pkctechs.in" className="text-xs text-slate-800 hover:text-slate-900 font-medium underline">
+                  legal@pkctechs.in
                 </a>
               </div>
 
@@ -80,8 +80,8 @@ export default function ContactPage() {
                 <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                   Editorial & Corrections
                 </span>
-                <a href="mailto:editorial@pkctechs.com" className="text-xs text-slate-800 hover:text-slate-900 font-medium underline">
-                  editorial@pkctechs.com
+                <a href="mailto:editorial@pkctechs.in" className="text-xs text-slate-800 hover:text-slate-900 font-medium underline">
+                  editorial@pkctechs.in
                 </a>
               </div>
 
@@ -99,7 +99,7 @@ export default function ContactPage() {
             <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 text-xs text-slate-600 space-y-2">
               <h3 className="font-bold text-slate-900">Grievance Redressal</h3>
               <p className="leading-relaxed">
-                Under the Indian Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, you may submit regulatory grievances to our designated Grievance Officer at <a href="mailto:compliance@pkctechs.com" className="underline font-medium text-slate-800">compliance@pkctechs.com</a>.
+                Under the Indian Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, you may submit regulatory grievances to our designated Grievance Officer at <a href="mailto:compliance@pkctechs.in" className="underline font-medium text-slate-800">compliance@pkctechs.in</a>.
               </p>
             </div>
           </div>

@@ -257,7 +257,7 @@ export const FALLBACK_IPOS = [
     "registrar": "Registrar to be finalized",
     "registrarInfo": {
       "name": "Registrar to be finalized",
-      "email": "support@pkctechs.com",
+      "email": "support@pkctechs.in",
       "contact_name": "Registrar Helpdesk",
       "contact_number": "+91 22 4918 6200",
       "website": "https://linkintime.co.in",
@@ -417,7 +417,7 @@ export const FALLBACK_IPOS = [
     "registrar": "Registrar to be finalized",
     "registrarInfo": {
       "name": "Registrar to be finalized",
-      "email": "support@pkctechs.com",
+      "email": "support@pkctechs.in",
       "contact_name": "Registrar Helpdesk",
       "contact_number": "+91 22 4918 6200",
       "website": "https://linkintime.co.in",
@@ -471,7 +471,7 @@ export const FALLBACK_IPOS = [
     "registrar": "Registrar to be finalized",
     "registrarInfo": {
       "name": "Registrar to be finalized",
-      "email": "support@pkctechs.com",
+      "email": "support@pkctechs.in",
       "contact_name": "Registrar Helpdesk",
       "contact_number": "+91 22 4918 6200",
       "website": "https://linkintime.co.in",
@@ -633,7 +633,7 @@ export const FALLBACK_IPOS = [
     "registrar": "Registrar to be finalized",
     "registrarInfo": {
       "name": "Registrar to be finalized",
-      "email": "support@pkctechs.com",
+      "email": "support@pkctechs.in",
       "contact_name": "Registrar Helpdesk",
       "contact_number": "+91 22 4918 6200",
       "website": "https://linkintime.co.in",
@@ -687,7 +687,7 @@ export const FALLBACK_IPOS = [
     "registrar": "Registrar to be finalized",
     "registrarInfo": {
       "name": "Registrar to be finalized",
-      "email": "support@pkctechs.com",
+      "email": "support@pkctechs.in",
       "contact_name": "Registrar Helpdesk",
       "contact_number": "+91 22 4918 6200",
       "website": "https://linkintime.co.in",

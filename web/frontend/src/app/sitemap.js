@@ -2,7 +2,7 @@ import { getAllBlogPosts } from '../data/blogPosts';
 import { FALLBACK_IPOS } from '../data/fallbackIpos';
 
 export default async function sitemap() {
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pkctechs.com').replace(/\/$/, '');
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://pkctechs.in').replace(/\/$/, '');
   const currentDate = new Date().toISOString();
 
   // Clean Canonical Static Routes (No query params)

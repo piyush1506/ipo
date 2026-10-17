@@ -6,7 +6,7 @@ export const metadata = {
   title: 'Privacy Policy | pkctechs IPO Intelligence',
   description: 'Learn how pkctechs collects, uses, and safeguards your information in compliance with Google AdSense, GDPR, CCPA, and Indian Digital Personal Data Protection guidelines.',
   alternates: {
-    canonical: 'https://www.pkctechs.com/privacy-policy',
+    canonical: 'https://pkctechs.in/privacy-policy',
   },
 };
 
@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage() {
             Privacy Policy
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-            Effective Date: {lastUpdated} &nbsp;•&nbsp; Applicable to all visitors and users of pkctechs.com
+            Effective Date: {lastUpdated} &nbsp;•&nbsp; Applicable to all visitors and users of pkctechs.in
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
             </h2>
             <p className="mb-3">
               Welcome to <strong>pkctechs</strong> (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;), accessible at{' '}
-              <a href="https://www.pkctechs.com" className="text-slate-900 font-medium underline">https://www.pkctechs.com</a>.
+              <a href="https://pkctechs.in" className="text-slate-900 font-medium underline">https://pkctechs.in</a>.
               Your privacy and trust are paramount to us. This Privacy Policy documents the types of personal and technical information collected and recorded by pkctechs and explains how we use, safeguard, and disclose that data in strict compliance with applicable data protection legislation, including the <strong>Google AdSense Publisher Policies</strong>, the <strong>General Data Protection Regulation (GDPR)</strong>, the <strong>California Consumer Privacy Act (CCPA/CPRA)</strong>, and the <strong>Digital Personal Data Protection Act (DPDP Act)</strong>.
             </p>
             <p>
@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <div className="space-y-3 pl-4 border-l-2 border-slate-300">
               <p>
-                <strong>DoubleClick DART Cookie:</strong> Google is a third-party vendor on our site. It uses cookies, specifically the DART cookie, to serve targeted ads to our site visitors based upon their visit to pkctechs.com and other websites on the internet.
+                <strong>DoubleClick DART Cookie:</strong> Google is a third-party vendor on our site. It uses cookies, specifically the DART cookie, to serve targeted ads to our site visitors based upon their visit to pkctechs.in and other websites on the internet.
               </p>
               <p>
                 <strong>Ad Personalization Opt-Out:</strong> Users may opt out of the use of the DART cookie and personalized advertising at any time by visiting the{' '}
@@ -231,10 +231,10 @@ export default function PrivacyPolicyPage() {
             </p>
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-xs text-slate-700 space-y-1.5">
               <p><strong>Platform:</strong> pkctechs IPO Intelligence Platform</p>
-              <p><strong>Website:</strong> <a href="https://www.pkctechs.com" className="underline">https://www.pkctechs.com</a></p>
-              <p><strong>Official Privacy Email:</strong> <a href="mailto:privacy@pkctechs.com" className="text-slate-900 font-semibold underline">privacy@pkctechs.com</a></p>
-              <p><strong>General Support Email:</strong> <a href="mailto:support@pkctechs.com" className="text-slate-900 font-semibold underline">support@pkctechs.com</a></p>
-              <p><strong>Contact Page:</strong> <Link href="/contact" className="text-slate-900 font-semibold underline">pkctechs.com/contact</Link></p>
+              <p><strong>Website:</strong> <a href="https://pkctechs.in" className="underline">https://pkctechs.in</a></p>
+              <p><strong>Official Privacy Email:</strong> <a href="mailto:privacy@pkctechs.in" className="text-slate-900 font-semibold underline">privacy@pkctechs.in</a></p>
+              <p><strong>General Support Email:</strong> <a href="mailto:support@pkctechs.in" className="text-slate-900 font-semibold underline">support@pkctechs.in</a></p>
+              <p><strong>Contact Page:</strong> <Link href="/contact" className="text-slate-900 font-semibold underline">pkctechs.in/contact</Link></p>
               <p><strong>Expected Response Time:</strong> Within 24 to 48 business hours</p>
             </div>
           </section>

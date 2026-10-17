@@ -6,7 +6,7 @@ export const metadata = {
   title: 'Official IPO Registrars Directory | pkctechs',
   description: 'Official direct portals and contact information for major Indian IPO registrars including Link Intime, KFin Technologies, Bigshare Services, and Maashitla.',
   alternates: {
-    canonical: 'https://www.pkctechs.com/allotment-status',
+    canonical: 'https://pkctechs.in/allotment-status',
   },
 };
 
