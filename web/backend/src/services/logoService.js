@@ -2,11 +2,11 @@ const axios = require('axios');
 const CustomLogo = require('../models/CustomLogo');
 
 const SUCCESS_TTL_MS = 24 * 60 * 60 * 1000;
-const FAILURE_TTL_MS = 6 * 60 * 60 * 1000;
-const MAX_CACHE_ENTRIES = 100;
-const MAX_HTML_BYTES = 750 * 1024;
-const MAX_IMAGE_BYTES = 1024 * 1024;
-const REQUEST_TIMEOUT_MS = 3500;
+const FAILURE_TTL_MS = 15 * 60 * 1000; // 15 mins for failure cache so retries work
+const MAX_CACHE_ENTRIES = 250;
+const MAX_HTML_BYTES = 3 * 1024 * 1024; // 3 MB
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
+const REQUEST_TIMEOUT_MS = 5000;
 
 const logoCache = new Map();
 
@@ -124,7 +124,17 @@ async function fetchWebsite(domain) {
 function isSupportedImage(contentType, data) {
   if (!Buffer.isBuffer(data) || data.length === 0 || data.length > MAX_IMAGE_BYTES) return false;
   const type = String(contentType || '').split(';')[0].trim().toLowerCase();
-  return ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'].includes(type);
+  return [
+    'image/png',
+    'image/jpeg',
+    'image/jpg',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+    'image/x-icon',
+    'image/vnd.microsoft.icon',
+    'image/ico',
+  ].includes(type);
 }
 
 async function downloadImage(url) {
@@ -135,7 +145,7 @@ async function downloadImage(url) {
       maxContentLength: MAX_IMAGE_BYTES,
       responseType: 'arraybuffer',
       headers: {
-        Accept: 'image/svg+xml,image/png,image/jpeg,image/webp,image/gif;q=0.8',
+        Accept: 'image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/x-icon;q=0.8',
         Referer: new URL(url).origin,
         'User-Agent': 'Mozilla/5.0 (compatible; PKCTechsLogoBot/1.0)',
       },
@@ -187,6 +197,7 @@ async function discoverCompanyLogo(companyName, symbol = '') {
   const domains = buildDomainCandidates(companyName, symbol);
   const websites = await Promise.all(domains.map((domain) => fetchWebsite(domain)));
 
+  // 1. Try extracted website logo candidates
   for (const website of websites.filter(Boolean)) {
     const candidates = extractLogoCandidates(website.html, website.finalUrl);
     for (const candidate of candidates) {
@@ -199,6 +210,27 @@ async function discoverCompanyLogo(companyName, symbol = '') {
       };
       setCache(key, value);
       return { ...value, cacheStatus: 'MISS' };
+    }
+  }
+
+  // 2. Try DuckDuckGo & Google high-res favicon providers for each candidate domain
+  for (const domain of domains) {
+    const iconProviders = [
+      `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=128`,
+      `https://logo.clearbit.com/${domain}`,
+    ];
+
+    for (const iconUrl of iconProviders) {
+      const image = await downloadImage(iconUrl);
+      if (!image || image.data.length < 100) continue;
+      const value = {
+        ...image,
+        sourceUrl: iconUrl,
+        expiresAt: Date.now() + SUCCESS_TTL_MS,
+      };
+      setCache(key, value);
+      return { ...value, cacheStatus: 'MISS-FAVICON' };
     }
   }
 

@@ -137,6 +137,14 @@ async function executeSyncIPOs() {
 
     const validIpos = detailedIpos.filter(Boolean);
 
+    // Enrich Upstox IPOs with live GMP matched from IPOGuru
+    try {
+      const { enrichIposWithGmp } = require('./gmpService');
+      await enrichIposWithGmp(validIpos);
+    } catch (gmpErr) {
+      console.warn('[Sync] IPOGuru GMP enrichment warning:', gmpErr.message);
+    }
+
     // Bulk upsert into MongoDB using bulkWrite for maximum speed
     if (require('mongoose').connection.readyState === 1 && validIpos.length > 0) {
       // 1. Fetch existing to compare statuses

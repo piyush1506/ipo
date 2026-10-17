@@ -1,43 +1,151 @@
-const axios = require('axios');
+const { initializeApp, cert, getApps } = require('firebase-admin/app');
+const { getMessaging } = require('firebase-admin/messaging');
+const path = require('path');
+const fs = require('fs');
+const { PushToken } = require('../models/PushNotification');
 const User = require('../models/User');
 
+let messagingInstance = null;
+
 /**
- * Sends a push notification via Expo Push API
- * @param {Array<string>} pushTokens Array of Expo Push Tokens
- * @param {string} title Notification Title
- * @param {string} body Notification Body
- * @param {object} data Optional custom data payload
+ * Initialize Firebase Admin SDK using serviceAccountKey.json
  */
-async function sendPushNotification(pushTokens, title, body, data = {}) {
-  // Filter out invalid tokens
-  const validTokens = pushTokens.filter(token => 
-    token && token.startsWith('ExponentPushToken[')
-  );
-
-  if (validTokens.length === 0) return;
-
-  const messages = validTokens.map(token => ({
-    to: token,
-    sound: 'default',
-    title,
-    body,
-    data,
-  }));
+function getMessagingService() {
+  if (messagingInstance) return messagingInstance;
 
   try {
-    const response = await axios.post('https://exp.host/--/api/v2/push/send', messages, {
-      headers: {
-        'Accept': 'application/json',
-        'Accept-encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      }
+    const serviceAccountPath =
+      process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
+      path.join(__dirname, '../../serviceAccountKey.json');
+
+    if (fs.existsSync(serviceAccountPath)) {
+      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      const apps = getApps();
+      const app = apps.length > 0
+        ? apps[0]
+        : initializeApp({
+            credential: cert(serviceAccount),
+          });
+
+      messagingInstance = getMessaging(app);
+      console.log(`[FCM] Firebase Messaging initialized for project: ${serviceAccount.project_id}`);
+    } else {
+      console.warn(`[FCM] Warning: serviceAccountKey.json not found at ${serviceAccountPath}`);
+    }
+  } catch (err) {
+    console.error('[FCM] Error initializing Firebase Admin SDK:', err.message);
+  }
+
+  return messagingInstance;
+}
+
+// Auto-initialize on module load
+getMessagingService();
+
+/**
+ * Send a Broadcast Push Notification to ALL mobile devices via FCM topic
+ * @param {object} payload - { title, body, data }
+ */
+async function sendBroadcast({ title, body, data = {} }) {
+  const messaging = getMessagingService();
+  if (!messaging) {
+    throw new Error('Firebase Messaging is not initialized. Please verify serviceAccountKey.json exists.');
+  }
+
+  // FCM data values MUST be strings
+  const stringData = {};
+  if (data && typeof data === 'object') {
+    for (const [k, v] of Object.entries(data)) {
+      stringData[k] = typeof v === 'string' ? v : JSON.stringify(v);
+    }
+  }
+
+  const message = {
+    topic: 'all_users',
+    notification: {
+      title,
+      body,
+    },
+    data: stringData,
+    android: {
+      priority: 'high',
+      notification: {
+        channelId: 'high_importance_channel',
+        priority: 'max',
+        defaultSound: true,
+        defaultVibrateTimings: true,
+      },
+    },
+  };
+
+  const response = await messaging.send(message);
+  console.log(`[FCM] Broadcast sent to topic "all_users". Message ID: ${response}`);
+  return response;
+}
+
+/**
+ * Send targeted push notification to specific FCM device tokens
+ */
+async function sendToTokens(tokens, title, body, data = {}) {
+  const messaging = getMessagingService();
+  if (!messaging || !tokens || tokens.length === 0) {
+    return { successCount: 0, failureCount: 0 };
+  }
+
+  const stringData = {};
+  if (data && typeof data === 'object') {
+    for (const [k, v] of Object.entries(data)) {
+      stringData[k] = typeof v === 'string' ? v : JSON.stringify(v);
+    }
+  }
+
+  const batchSize = 500;
+  let totalSuccess = 0;
+  let totalFailure = 0;
+  const invalidTokens = [];
+
+  for (let i = 0; i < tokens.length; i += batchSize) {
+    const batch = tokens.slice(i, i + batchSize);
+    const response = await messaging.sendEachForMulticast({
+      tokens: batch,
+      notification: { title, body },
+      data: stringData,
+      android: {
+        priority: 'high',
+        notification: {
+          channelId: 'high_importance_channel',
+          priority: 'max',
+          defaultSound: true,
+          defaultVibrateTimings: true,
+        },
+      },
     });
 
-    console.log('Successfully sent push notifications:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Error sending push notifications:', error.response?.data || error.message);
+    totalSuccess += response.successCount;
+    totalFailure += response.failureCount;
+
+    // Collect invalid tokens for auto-cleanup
+    response.responses.forEach((res, idx) => {
+      if (!res.success) {
+        const errCode = res.error?.code;
+        if (
+          errCode === 'messaging/invalid-registration-token' ||
+          errCode === 'messaging/registration-token-not-registered'
+        ) {
+          invalidTokens.push(batch[idx]);
+        }
+      }
+    });
   }
+
+  // Clean up stale tokens from database
+  if (invalidTokens.length > 0) {
+    await PushToken.deleteMany({ token: { $in: invalidTokens } }).catch((e) =>
+      console.warn('[FCM] Error pruning stale tokens:', e.message)
+    );
+  }
+
+  return { successCount: totalSuccess, failureCount: totalFailure };
 }
 
 /**
@@ -45,46 +153,41 @@ async function sendPushNotification(pushTokens, title, body, data = {}) {
  */
 async function notifyAllUsers(title, body, data = {}) {
   try {
-    // Find all users who have an expoPushToken
-    const users = await User.find({ expoPushToken: { $exists: true, $ne: null } }).lean();
-    const tokens = users.map(user => user.expoPushToken);
-    
-    if (tokens.length > 0) {
-      await sendPushNotification(tokens, title, body, data);
-    }
-    return tokens.length;
+    return await sendBroadcast({ title, body, data });
   } catch (error) {
-    console.error('Failed to notify all users:', error);
-    return 0;
+    console.error('[FCM] notifyAllUsers error:', error.message);
+    throw error;
   }
 }
 
 /**
- * Sends a notification to specific users based on their stored PAN numbers.
- * Useful for when an allotment comes out for a specific PAN.
+ * Sends a notification to specific users based on their stored PAN numbers
  */
 async function notifyUsersByPan(panNumbers, title, body, data = {}) {
   try {
-    // Find users who have at least one of these PAN numbers
+    const upperPans = panNumbers.map((p) => p.toUpperCase());
     const users = await User.find({
-      'pans.panNumber': { $in: panNumbers.map(p => p.toUpperCase()) },
-      expoPushToken: { $exists: true, $ne: null }
+      'pans.panNumber': { $in: upperPans },
     }).lean();
 
-    const tokens = users.map(user => user.expoPushToken);
-    
+    const userIds = users.map((u) => u._id.toString());
+    const tokenDocs = await PushToken.find({ userId: { $in: userIds } }).lean();
+    const tokens = tokenDocs.map((t) => t.token);
+
     if (tokens.length > 0) {
-      await sendPushNotification(tokens, title, body, data);
+      return await sendToTokens(tokens, title, body, data);
     }
-    return tokens.length;
+    return { successCount: 0, failureCount: 0 };
   } catch (error) {
-    console.error('Failed to notify by PAN:', error);
-    return 0;
+    console.error('[FCM] notifyUsersByPan error:', error.message);
+    return { successCount: 0, failureCount: 0 };
   }
 }
 
 module.exports = {
-  sendPushNotification,
+  getMessagingService,
+  sendBroadcast,
+  sendToTokens,
   notifyAllUsers,
-  notifyUsersByPan
+  notifyUsersByPan,
 };

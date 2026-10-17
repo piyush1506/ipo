@@ -2,10 +2,14 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') }
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const axios = require('axios');
 const IPO = require('./models/ipo');
+const User = require('./models/User');
+const { PushToken, NotificationLog } = require('./models/PushNotification');
 const connectDB = require('./config/db');
 const { SyncIPOs } = require('./services/iposervices');
 const { discoverCompanyLogo } = require('./services/logoService');
+const { sendBroadcast, sendToTokens } = require('./services/notificationService');
 
 const app = express();
 
@@ -342,6 +346,38 @@ app.post(['/api/sync', '/api/v1/sync-ipos'], async (req, res) => {
   }
 });
 
+// Get raw live GMP data from IPOGuru
+app.get(['/api/gmp', '/api/v1/gmp'], async (req, res) => {
+  try {
+    const { fetchIpoGuruGmpList } = require('./services/gmpService');
+    const data = await fetchIpoGuruGmpList(req.query.refresh === 'true');
+    res.setHeader('Cache-Control', 'public, max-age=120, s-maxage=300');
+    res.json({
+      success: true,
+      count: data.length,
+      data
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Refresh and match IPOGuru GMP with existing Upstox IPOs in MongoDB
+app.post(['/api/gmp/sync', '/api/v1/gmp/sync'], async (req, res) => {
+  try {
+    const { refreshGmpInDatabase } = require('./services/gmpService');
+    const result = await refreshGmpInDatabase();
+    await warmCache();
+    res.json({
+      success: true,
+      message: 'GMP updated and matched with Upstox IPOs',
+      result
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Admin endpoint to upload/override logo
 app.post(['/api/admin/company-logo', '/api/v1/admin/company-logo'], async (req, res) => {
   try {
@@ -436,8 +472,6 @@ app.post(['/api/admin/notify', '/api/v1/admin/notify'], async (req, res) => {
 });
 
 // --- User & PAN Management ---
-const User = require('./models/User');
-
 // Login or register user with Google info
 app.post(['/api/users/auth', '/api/v1/users/auth'], async (req, res) => {
   try {
@@ -450,17 +484,17 @@ app.post(['/api/users/auth', '/api/v1/users/auth'], async (req, res) => {
     let user = await User.findOne({ email: email.toLowerCase() });
     
     if (user) {
-      // Update googleId and picture if they were missing
+      // Update googleId, picture, and name if available
       let updated = false;
-      if (googleId && !user.googleId) { user.googleId = googleId; updated = true; }
-      if (picture && !user.picture) { user.picture = picture; updated = true; }
-      if (name && !user.name) { user.name = name; updated = true; }
+      if (googleId && user.googleId !== googleId) { user.googleId = googleId; updated = true; }
+      if (picture && user.picture !== picture) { user.picture = picture; updated = true; }
+      if (name && (!user.name || user.name === 'Investor' || user.name !== name)) { user.name = name; updated = true; }
       
       if (updated) {
         await user.save();
       }
     } else {
-      user = new User({ email, name, googleId, picture, pans: [] });
+      user = new User({ email: email.toLowerCase(), name: name || 'Investor', googleId, picture, pans: [] });
       await user.save();
     }
 
@@ -548,6 +582,116 @@ app.delete(['/api/users/:id/pans/:panId', '/api/v1/users/:id/pans/:panId'], asyn
     res.json({ success: true, data: user.pans });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════
+// PUSH NOTIFICATION ADMIN & CLIENT APIS
+// ═════════════════════════════════════════════════════════════════════
+
+// 1. Mobile App: Register or refresh Expo Push Token
+app.post(['/api/notifications/register-token', '/api/v1/notifications/register-token'], async (req, res) => {
+  try {
+    const { token, platform, deviceModel } = req.body;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ success: false, message: 'Push token is required' });
+    }
+
+    const updated = await PushToken.findOneAndUpdate(
+      { token },
+      {
+        platform: platform || 'android',
+        deviceModel: deviceModel || '',
+        lastActive: new Date(),
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    res.json({ success: true, message: 'Push token registered successfully', data: updated });
+  } catch (err) {
+    console.error('[Notifications] Register token error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 2. Admin Panel: Get stats (subscriber count & history)
+app.get(['/api/notifications/stats', '/api/v1/notifications/stats'], async (req, res) => {
+  try {
+    const [subscribersCount, recentLogs] = await Promise.all([
+      PushToken.countDocuments(),
+      NotificationLog.find().sort({ sentAt: -1 }).limit(20).lean(),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        totalSubscribers: subscribersCount,
+        history: recentLogs,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 3. Admin Panel: Broadcast Push Notification to All Users
+app.post(['/api/notifications/broadcast', '/api/v1/notifications/broadcast'], async (req, res) => {
+  try {
+    const { title, body, data = {} } = req.body;
+
+    if (!title || !body) {
+      return res.status(400).json({
+        success: false,
+        message: 'Notification title and body are required',
+      });
+    }
+
+    const subscribersCount = await PushToken.countDocuments();
+
+    // 1. Send via FCM Topic Broadcast (reaches all subscribed devices immediately)
+    let fcmResult;
+    try {
+      fcmResult = await sendBroadcast({ title, body, data });
+    } catch (fcmErr) {
+      console.error('[FCM] Broadcast error:', fcmErr.message);
+      return res.status(500).json({
+        success: false,
+        message: `Failed to send FCM broadcast: ${fcmErr.message}`,
+      });
+    }
+
+    // 2. Also send to any directly registered device tokens via multicast
+    const tokenDocs = await PushToken.find().lean();
+    const tokens = tokenDocs
+      .map((t) => t.token)
+      .filter((t) => typeof t === 'string' && t.length > 20 && !t.startsWith('ExponentPushToken'));
+    if (tokens.length > 0) {
+      sendToTokens(tokens, title, body, data).catch((err) =>
+        console.warn('[FCM] Multicast background error:', err.message)
+      );
+    }
+
+    // 3. Log broadcast in database
+    const recipientsCount = Math.max(subscribersCount, 1);
+    const log = await NotificationLog.create({
+      title,
+      body,
+      data,
+      recipientsCount,
+      status: 'sent',
+    });
+
+    console.log(`[Notifications] Sent broadcast to all users: "${title}" (FCM messageId: ${fcmResult})`);
+
+    res.json({
+      success: true,
+      message: `Notification broadcast sent successfully!`,
+      recipientsCount,
+      log,
+    });
+  } catch (err) {
+    console.error('[Notifications] Broadcast error:', err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
