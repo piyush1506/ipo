@@ -10,13 +10,13 @@ export default function IpoTableView({ ipos, onViewDetails, onShare }) {
         <table className="w-full border-collapse text-left min-w-[780px]">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="py-3.5 px-4.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Company & Symbol</th>
-              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Timeline / Status</th>
-              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Offer / Price Band</th>
-              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Investment / Lot</th>
-              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Issue Size</th>
-              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Demand (Subscription)</th>
-              <th className="py-3.5 px-4.5 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
+              <th className="py-3.5 px-4.5 text-xs font-semibold text-slate-500 uppercase tracking-wider text-blue-600">Company & Symbol</th>
+              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-blue-600">Timeline / Status</th>
+              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-blue-600">Offer / Price Band</th>
+              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-blue-600">Investment / Lot</th>
+              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-blue-600">Issue Size</th>
+              <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-blue-600">Demand (Subscription)</th>
+              <th className="py-3.5 px-4.5 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right text-blue-600">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -80,12 +80,12 @@ export default function IpoTableView({ ipos, onViewDetails, onShare }) {
                       </span>
                       <div>
                         {isClosed ? (
-                          <span className="inline-block text-[10px] font-medium px-1.5 py-0.25 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="inline-block text-[10px] font-medium px-1.5 py-0.25 rounded bg-transparent text-slate-600 border border-slate-300">
                             🏁 Listed
                           </span>
                         ) : isOpen ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.25 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.25 rounded bg-transparent text-blue-600 border border-blue-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                             Open
                           </span>
                         ) : (
@@ -138,7 +138,7 @@ export default function IpoTableView({ ipos, onViewDetails, onShare }) {
                       isClosed
                         ? 'text-slate-800 bg-slate-100 border-slate-300 font-semibold'
                         : subscriptionNum > 0
-                        ? 'text-emerald-800 bg-emerald-50 border-emerald-200 font-semibold'
+                        ? 'text-blue-800 bg-blue-50 border-blue-200 font-semibold'
                         : 'text-slate-500 bg-slate-50 border-slate-200'
                     }`}>
                       {ipo.totalSubscription || '0.0'}x {isClosed ? '(Final)' : ''}

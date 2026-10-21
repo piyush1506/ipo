@@ -264,7 +264,7 @@ function HomeContent({ initialIpos = [] }) {
       {/* Toast Notification */}
       {toastMessage && (
         <div className="animate-toast fixed top-[76px] right-6 z-[1000] bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-medium shadow-md border border-slate-600 flex items-center gap-2">
-          <span className="text-emerald-300">✓</span> {toastMessage}
+          <span className="text-blue-300">✓</span> {toastMessage}
         </div>
       )}
 

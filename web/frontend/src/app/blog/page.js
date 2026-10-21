@@ -99,7 +99,7 @@ export default function BlogIndexPage() {
             {/* Live Counter Badge */}
             <div className="flex flex-col gap-2 p-4 bg-slate-50 rounded-xl border border-slate-200 shrink-0 w-full md:w-auto">
               <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                 {allPosts.length} Educational Guides
               </span>
               <span className="text-[11px] text-slate-500 font-normal">

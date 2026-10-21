@@ -12,6 +12,115 @@ const inter = Inter({
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://pkctechs.in').replace(/\/$/, '');
 
+// Structured Data for Google SEO
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${siteUrl}/#website`,
+      'url': siteUrl,
+      'name': 'pkctechs',
+      'description': 'Latest IPO Information, Subscription Status, and Allotment Status Checking Portal.',
+      'publisher': {
+        '@id': `${siteUrl}/#organization`,
+      },
+      'potentialAction': [
+        {
+          '@type': 'SearchAction',
+          'target': {
+            '@type': 'EntryPoint',
+            'urlTemplate': `${siteUrl}/?search={search_term_string}`,
+          },
+          'query-input': 'required name=search_term_string',
+        },
+      ],
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${siteUrl}/#organization`,
+      'name': 'pkctechs',
+      'url': siteUrl,
+      'logo': {
+        '@type': 'ImageObject',
+        'url': `${siteUrl}/icon.svg`,
+        'caption': 'pkctechs Logo',
+      },
+      'sameAs': [
+        'https://twitter.com/pkctechs',
+        'https://linkedin.com/company/pkctechs',
+      ],
+    },
+    {
+      '@type': 'ItemList',
+      '@id': `${siteUrl}/#sitelinks`,
+      'name': 'pkctechs IPO Sitelinks',
+      'itemListElement': [
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 1,
+          'name': 'Mainboard & SME IPO Allotment Status',
+          'description': 'Direct official registrar portals and PAN verification tools for Link Intime, KFintech, and Bigshare.',
+          'url': `${siteUrl}/allotment-status`,
+        },
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 2,
+          'name': 'IPO Dashboard (Mainboard & SME)',
+          'description': 'Live Indian IPO dashboard tracking ongoing bidding, price bands, GMP, and issue sizes on NSE and BSE.',
+          'url': `${siteUrl}/`,
+        },
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 3,
+          'name': 'Complete IPO Allotment & Bidding Guide',
+          'description': 'Step-by-step guide to IPO application rules, SEBI allotment allotment mechanisms, UPI mandates, and listing gains.',
+          'url': `${siteUrl}/ipo-guide`,
+        },
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 4,
+          'name': 'IPO News, Analysis & Insights',
+          'description': 'Latest primary equity market news, company fundamentals, anchor investor reports, and IPO reviews.',
+          'url': `${siteUrl}/blog`,
+        },
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 5,
+          'name': 'About pkctechs Platform',
+          'description': 'Learn about pkctechs real-time IPO intelligence, data sources, and editorial standards.',
+          'url': `${siteUrl}/about`,
+        },
+      ],
+    },
+    {
+      '@type': 'Article',
+      '@id': `${siteUrl}/#article`,
+      'name': 'pkctechs IPO Intelligence',
+      'description': 'Real-time Indian IPO tracking platform with price bands, lot sizes, live subscription rates, and allotment status.',
+      'author': {
+        '@type': 'Organization',
+        '@id': `${siteUrl}/#organization`,
+        'name': 'pkctechs',
+      },
+      'publisher': {
+        '@type': 'Organization',
+        '@id': `${siteUrl}/#organization`,
+        'name': 'pkctechs',
+        'logo': {
+          '@type': 'ImageObject',
+          'url': `${siteUrl}/icon.svg`,
+          'caption': 'pkctechs Logo',
+        },
+      },
+      'mainEntityOfPage': {
+        '@type': 'WebPage',
+        '@id': `${siteUrl}`,
+      },
+    },
+  ],
+};
+
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -97,93 +206,15 @@ export const metadata = {
   other: {
     'google-adsense-account': 'ca-pub-9516698796421486',
   },
+  // Preconnect to Google AdSense and related origins to improve LCP
+  links: [
+    { rel: 'preconnect', href: 'https://pagead2.googlesyndication.com', crossorigin: 'anonymous' },
+    { rel: 'preconnect', href: 'https://googlesyndication.com', crossorigin: 'anonymous' },
+    { rel: 'preconnect', href: 'https://www.google.com', crossorigin: 'anonymous' }
+  ],
 };
 
 export default function RootLayout({ children }) {
-  // Google Rich Sitelinks & Structured Data
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'WebSite',
-        '@id': `${siteUrl}/#website`,
-        'url': siteUrl,
-        'name': 'pkctechs',
-        'description': 'Latest IPO Information, Subscription Status, and Allotment Status Checking Portal.',
-        'publisher': {
-          '@id': `${siteUrl}/#organization`,
-        },
-        'potentialAction': [
-          {
-            '@type': 'SearchAction',
-            'target': {
-              '@type': 'EntryPoint',
-              'urlTemplate': `${siteUrl}/?search={search_term_string}`,
-            },
-            'query-input': 'required name=search_term_string',
-          },
-        ],
-      },
-      {
-        '@type': 'Organization',
-        '@id': `${siteUrl}/#organization`,
-        'name': 'pkctechs',
-        'url': siteUrl,
-        'logo': {
-          '@type': 'ImageObject',
-          'url': `${siteUrl}/icon.svg`,
-          'caption': 'pkctechs Logo',
-        },
-        'sameAs': [
-          'https://twitter.com/pkctechs',
-          'https://linkedin.com/company/pkctechs',
-        ],
-      },
-      {
-        '@type': 'ItemList',
-        '@id': `${siteUrl}/#sitelinks`,
-        'name': 'pkctechs IPO Sitelinks',
-        'itemListElement': [
-          {
-            '@type': 'SiteNavigationElement',
-            'position': 1,
-            'name': 'Mainboard & SME IPO Allotment Status',
-            'description': 'Direct official registrar portals and PAN verification tools for Link Intime, KFintech, and Bigshare.',
-            'url': `${siteUrl}/allotment-status`,
-          },
-          {
-            '@type': 'SiteNavigationElement',
-            'position': 2,
-            'name': 'IPO Dashboard (Mainboard & SME)',
-            'description': 'Live Indian IPO dashboard tracking ongoing bidding, price bands, GMP, and issue sizes on NSE and BSE.',
-            'url': `${siteUrl}/`,
-          },
-          {
-            '@type': 'SiteNavigationElement',
-            'position': 3,
-            'name': 'Complete IPO Allotment & Bidding Guide',
-            'description': 'Step-by-step guide to IPO application rules, SEBI allotment allotment mechanisms, UPI mandates, and listing gains.',
-            'url': `${siteUrl}/ipo-guide`,
-          },
-          {
-            '@type': 'SiteNavigationElement',
-            'position': 4,
-            'name': 'IPO News, Analysis & Insights',
-            'description': 'Latest primary equity market news, company fundamentals, anchor investor reports, and IPO reviews.',
-            'url': `${siteUrl}/blog`,
-          },
-          {
-            '@type': 'SiteNavigationElement',
-            'position': 5,
-            'name': 'About pkctechs Platform',
-            'description': 'Learn about pkctechs real-time IPO intelligence, data sources, and editorial standards.',
-            'url': `${siteUrl}/about`,
-          },
-        ],
-      },
-    ],
-  };
-
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className={inter.className} style={{ margin: 0, padding: 0 }} suppressHydrationWarning>
@@ -206,14 +237,6 @@ export default function RootLayout({ children }) {
               gtag('config', 'G-8TEVCHMFE9', { page_path: window.location.pathname });
             `,
           }}
-        />
-
-        {/* Google AdSense */}
-        <Script
-          id="google-adsense"
-          strategy="afterInteractive"
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9516698796421486"
-          crossOrigin="anonymous"
         />
 
         {/* JSON-LD Structured Data for Google SEO */}

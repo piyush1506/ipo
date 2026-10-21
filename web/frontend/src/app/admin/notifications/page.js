@@ -45,13 +45,24 @@ export default function NotificationAdminPage() {
   const fetchStats = async () => {
     try {
       setLoadingStats(true);
-      const res = await fetch(`${API_BASE}/api/notifications/stats`);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setStats(json.data);
+      let res;
+      try {
+        res = await fetch(`${API_BASE}/api/notifications/stats`);
+      } catch (err) {
+        if (API_BASE.includes('localhost') || API_BASE.includes('127.0.0.1')) {
+          res = await fetch('https://api.pkctechs.in/api/notifications/stats');
+        } else {
+          throw err;
+        }
       }
-    } catch (err) {
-      console.warn('Could not fetch notification stats:', err);
+      if (res && res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          setStats(json.data);
+        }
+      }
+    } catch {
+      // Offline fallback: keep default stats state without error toast
     } finally {
       setLoadingStats(false);
     }
@@ -151,7 +162,7 @@ export default function NotificationAdminPage() {
                 Operational
               </span>
             </div>
-            <span style={styles.metricSub}>Expo Push Service • High Priority</span>
+            <span style={styles.metricSub}>Firebase Cloud Messaging (FCM) • High Priority</span>
           </div>
         </section>
 

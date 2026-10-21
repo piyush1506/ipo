@@ -198,17 +198,17 @@ export function formatCrores(amount) {
 }
 
 export function formatDate(dateStr) {
-  if (!dateStr) return 'To Be Announced';
+  if (!dateStr || dateStr === 'null' || dateStr === '0000-00-00') return 'To Be Announced';
   try {
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
+    if (isNaN(d.getTime()) || d.getFullYear() <= 1970) return 'To Be Announced';
     return d.toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
     });
   } catch {
-    return dateStr;
+    return 'To Be Announced';
   }
 }
 
@@ -275,7 +275,8 @@ export function getBrandPalette(name = '') {
 export function generateIpoEditorial(ipo) {
   if (!ipo) return { paragraphs: [], highlights: [] };
 
-  const companyName = ipo.companyName || ipo.ipoName || 'The Company';
+  const rawCompanyName = ipo.companyName || ipo.ipoName || 'The Company';
+  const companyName = rawCompanyName.replace(/\s+IPO$/i, '').trim();
   const isSME = (ipo.issueType || '').toUpperCase() === 'SME';
   const minP = ipo.priceband?.min || 0;
   const maxP = ipo.priceband?.max || ipo.cutoffPrice || minP || 0;
@@ -344,8 +345,9 @@ export function generateIpoEditorial(ipo) {
 export function calculateLotTiers(ipo) {
   if (!ipo) return [];
 
-  const maxPrice = ipo.priceband?.max || ipo.cutoffPrice || ipo.priceband?.min || 100;
-  const lotSize = ipo.lotsize || 1;
+  const maxPrice = Number(ipo.priceband?.max || ipo.cutoffPrice || ipo.priceband?.min || 0);
+  const lotSize = Number(ipo.lotsize || 0);
+  if (lotSize <= 1 || maxPrice <= 0) return [];
   const baseLotCost = maxPrice * lotSize;
   const isSME = (ipo.issueType || '').toUpperCase() === 'SME';
 

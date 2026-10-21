@@ -180,7 +180,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc pl-6 space-y-1.5 text-xs text-slate-600">
               <li><strong>The Right to Access:</strong> You have the right to request copies of your personal data.</li>
               <li><strong>The Right to Rectification:</strong> You have the right to request correction of inaccurate or incomplete information.</li>
-              <li><strong>The Right to Erasure (&ldquo;Right to be Forgotten&rdquo;):</strong> You have the right to request deletion of your personal data under certain conditions.</li>
+              <li><strong>The Right to Erasure (&ldquo;Right to be Forgotten&rdquo;):</strong> You have the right to request permanent deletion of your personal data and account records. You can execute this instantly at any time using our dedicated <Link href="/delete-account" className="text-rose-600 font-semibold underline hover:text-rose-700">Account &amp; Data Deletion Portal</Link>.</li>
               <li><strong>The Right to Restrict Processing:</strong> You have the right to request that we restrict processing of your personal data.</li>
               <li><strong>The Right to Object to Processing:</strong> You have the right to object to our processing of your personal data.</li>
               <li><strong>The Right to Data Portability:</strong> You have the right to request transfer of your data to another organization.</li>

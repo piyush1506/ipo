@@ -280,7 +280,7 @@ export default function IpoDetailPage() {
       {/* Toast Notification */}
       {toastMessage && (
         <div className="animate-toast fixed top-[76px] right-6 z-[1000] bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-medium shadow-md border border-slate-600 flex items-center gap-2">
-          <span className="text-emerald-300">✓</span> {toastMessage}
+          <span className="text-blue-300">✓</span> {toastMessage}
         </div>
       )}
 
@@ -398,7 +398,7 @@ export default function IpoDetailPage() {
                   href={ipo.rhpUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm sm:text-base font-medium text-emerald-600 hover:text-emerald-700 hover:underline inline-flex items-center gap-1.5"
+                  className="text-sm sm:text-base font-medium text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1.5"
                 >
                   RHP PDF
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -408,7 +408,7 @@ export default function IpoDetailPage() {
                   </svg>
                 </a>
               ) : (
-                <span className="text-sm sm:text-base font-medium text-emerald-600 inline-flex items-center gap-1.5">
+                <span className="text-sm sm:text-base font-medium text-blue-600 inline-flex items-center gap-1.5">
                   RHP PDF
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -610,13 +610,13 @@ export default function IpoDetailPage() {
             {ipo.registrarInfo?.contact_number && <p>Phone: {ipo.registrarInfo.contact_number}</p>}
             {ipo.registrarInfo?.website ? (
               <p className="pt-1">
-                <a href={ipo.registrarInfo.website} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline font-medium inline-flex items-center gap-1">
+                <a href={ipo.registrarInfo.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium inline-flex items-center gap-1">
                   Visit registrar website ↗
                 </a>
               </p>
             ) : (
               <p className="pt-1">
-                <a href="https://www.bigshareonline.com/ipo_Allotment.html" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline font-medium inline-flex items-center gap-1">
+                <a href="https://www.bigshareonline.com/ipo_Allotment.html" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium inline-flex items-center gap-1">
                   Visit registrar website ↗
                 </a>
               </p>

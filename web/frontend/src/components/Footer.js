@@ -68,6 +68,7 @@ export default function Footer() {
             <li><Link href="/terms" className="text-slate-600 hover:text-slate-900 transition-colors">Terms & Conditions</Link></li>
             <li><Link href="/disclaimer" className="text-slate-600 hover:text-slate-900 transition-colors">Financial Disclaimer</Link></li>
             <li><Link href="/cookie-policy" className="text-slate-600 hover:text-slate-900 transition-colors">Cookie Policy</Link></li>
+            <li><Link href="/delete-account" className="text-rose-600 hover:text-rose-700 font-medium transition-colors">Delete Account</Link></li>
             <li><Link href="/about" className="text-slate-600 hover:text-slate-900 transition-colors">About Us</Link></li>
             <li><Link href="/contact" className="text-slate-600 hover:text-slate-900 transition-colors">Contact Us</Link></li>
           </ul>
@@ -88,6 +89,7 @@ export default function Footer() {
           <Link href="/privacy-policy" className="hover:text-slate-600 transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
           <Link href="/disclaimer" className="hover:text-slate-600 transition-colors">Disclaimer</Link>
+          <Link href="/delete-account" className="hover:text-rose-600 transition-colors">Delete Account</Link>
           <Link href="/contact" className="hover:text-slate-600 transition-colors">Contact</Link>
         </div>
       </div>

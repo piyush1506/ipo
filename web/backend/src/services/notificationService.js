@@ -69,11 +69,29 @@ async function sendBroadcast({ title, body, data = {} }) {
     data: stringData,
     android: {
       priority: 'high',
+      ttl: 86400 * 1000, // 24 hours in milliseconds
       notification: {
         channelId: 'high_importance_channel',
         priority: 'max',
         defaultSound: true,
         defaultVibrateTimings: true,
+        visibility: 'public',
+      },
+    },
+    apns: {
+      headers: {
+        'apns-priority': '10',
+      },
+      payload: {
+        aps: {
+          alert: {
+            title,
+            body,
+          },
+          sound: 'default',
+          badge: 1,
+          contentAvailable: true,
+        },
       },
     },
   };
@@ -112,11 +130,26 @@ async function sendToTokens(tokens, title, body, data = {}) {
       data: stringData,
       android: {
         priority: 'high',
+        ttl: 86400 * 1000,
         notification: {
           channelId: 'high_importance_channel',
           priority: 'max',
           defaultSound: true,
           defaultVibrateTimings: true,
+          visibility: 'public',
+        },
+      },
+      apns: {
+        headers: {
+          'apns-priority': '10',
+        },
+        payload: {
+          aps: {
+            alert: { title, body },
+            sound: 'default',
+            badge: 1,
+            contentAvailable: true,
+          },
         },
       },
     });

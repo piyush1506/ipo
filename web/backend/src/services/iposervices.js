@@ -2,6 +2,7 @@ const axios = require('axios');
 const Ipo = require('../models/ipo');
 
 const UPSTOX_API_BASE = 'https://api.upstox.com/v2';
+const UPSTOX_MARKET_DATA_BASE = 'https://api.upstox.com/v3';
 let syncPromise = null;
 
 function getUpstoxHeaders() {
@@ -41,6 +42,96 @@ async function mapConcurrent(items, limit, fn) {
     }
   }
   return results;
+}
+
+function toIsoDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(isoDate, days) {
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function getInstrumentKeys(ipo) {
+  if (!ipo.isin) return [];
+
+  const exchanges = Array.isArray(ipo.exchange) ? ipo.exchange : [];
+  const keys = exchanges
+    .map((exchange) => String(exchange).trim().toUpperCase())
+    .map((exchange) => {
+      if (exchange.includes('BSE')) return `BSE_EQ|${ipo.isin}`;
+      if (exchange.includes('NSE')) return `NSE_EQ|${ipo.isin}`;
+      return null;
+    })
+    .filter(Boolean);
+
+  return [...new Set([...keys, `NSE_EQ|${ipo.isin}`, `BSE_EQ|${ipo.isin}`])];
+}
+
+async function fetchListingOpenPrice(instrumentKey, listingDate, headers) {
+  const fromDate = addDays(listingDate, -1);
+  const toDate = addDays(listingDate, 7);
+  const endpoint = `${UPSTOX_MARKET_DATA_BASE}/historical-candle/${encodeURIComponent(instrumentKey)}/days/1/${toDate}/${fromDate}`;
+
+  try {
+    const response = await axios.get(endpoint, { headers, timeout: 6000 });
+    const candles = response.data?.data?.candles;
+    if (!Array.isArray(candles)) return null;
+
+    const listingCandle = candles
+      .filter((candle) => Array.isArray(candle) && candle.length >= 2)
+      .map((candle) => ({
+        date: toIsoDate(candle[0]),
+        open: Number(candle[1])
+      }))
+      .filter((candle) => candle.date && candle.date >= listingDate && candle.open > 0)
+      .sort((a, b) => a.date.localeCompare(b.date))[0];
+
+    return listingCandle || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function enrichListedIposWithMarketData(ipos, headers) {
+  const listedIpos = ipos.filter((ipo) => {
+    const listingDate = toIsoDate(ipo.listingdate);
+    return listingDate && listingDate <= toIsoDate(new Date()) && ipo.isin;
+  });
+
+  let actualListingPriceCount = 0;
+  await mapConcurrent(listedIpos, 4, async (ipo) => {
+    const listingDate = toIsoDate(ipo.listingdate);
+    const issuePrice = Number(ipo.cutoffPrice || ipo.priceband?.max || 0);
+    if (!listingDate || issuePrice <= 0) return null;
+
+    for (const instrumentKey of getInstrumentKeys(ipo)) {
+      const candle = await fetchListingOpenPrice(instrumentKey, listingDate, headers);
+      if (!candle) continue;
+
+      const listingGain = Number((candle.open - issuePrice).toFixed(2));
+      ipo.gmp = {
+        ...ipo.gmp,
+        isListed: true,
+        listingPrice: candle.open,
+        listingGain,
+        listingGainPercentage: Number(((listingGain / issuePrice) * 100).toFixed(2)),
+        listingGainIsActual: true,
+        listingGainSource: 'Upstox historical market data',
+        listingGainUpdatedAt: new Date(`${candle.date}T00:00:00.000Z`)
+      };
+      actualListingPriceCount += 1;
+      return ipo;
+    }
+
+    return null;
+  });
+
+  console.log(`[Sync] Retrieved actual Upstox listing prices for ${actualListingPriceCount} / ${listedIpos.length} listed IPOs.`);
 }
 
 /**
@@ -95,8 +186,8 @@ async function executeSyncIPOs() {
           min: Number(source.minimum_price || basic.minimum_price || 0),
           max: Number(source.maximum_price || basic.maximum_price || 0)
         },
-        lotsize: Number(source.lot_size || source.minimum_quantity || 1),
-        minimumQuantity: Number(source.minimum_quantity || source.lot_size || 1),
+        lotsize: Number(source.lot_size || source.minimum_quantity || 0),
+        minimumQuantity: Number(source.minimum_quantity || source.lot_size || 0),
         cutoffPrice: Number(source.cut_off_price || source.maximum_price || basic.maximum_price || 0),
         faceValue: Number(source.face_value || 10),
         opendate: source.timeline?.application_start_date || basic.bidding_start_date ? new Date(source.timeline?.application_start_date || basic.bidding_start_date) : null,
@@ -144,6 +235,10 @@ async function executeSyncIPOs() {
     } catch (gmpErr) {
       console.warn('[Sync] IPOGuru GMP enrichment warning:', gmpErr.message);
     }
+
+    // Use the listing day's market open from Upstox for listed IPOs. This
+    // intentionally runs during synchronization, never on user read paths.
+    await enrichListedIposWithMarketData(validIpos, headers);
 
     // Bulk upsert into MongoDB using bulkWrite for maximum speed
     if (require('mongoose').connection.readyState === 1 && validIpos.length > 0) {
@@ -209,5 +304,6 @@ function SyncIPOs() {
 
 module.exports = {
   SyncIPOs,
-  fetchUpstoxIpoDetails
+  fetchUpstoxIpoDetails,
+  enrichListedIposWithMarketData
 };

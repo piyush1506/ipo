@@ -260,7 +260,7 @@ export default async function BlogPostPage({ params }) {
 
             {/* Quick Action Widget */}
             <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-xs">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase tracking-wider">
                 Live Data
               </span>
               <h4 className="text-sm font-bold mt-2.5 mb-1 text-white">

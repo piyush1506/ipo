@@ -6,11 +6,23 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const qs = searchParams.toString() ? `?${searchParams.toString()}` : '';
 
-    const res = await fetch(`${backendUrl}/api/ipos${qs}`, {
-      headers: { 'Accept': 'application/json' },
-      next: { revalidate: 60 },
-      cache: 'force-cache'
-    });
+    let res;
+    try {
+      res = await fetch(`${backendUrl}/api/ipos${qs}`, {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+      });
+    } catch (fetchErr) {
+      if (backendUrl.includes('localhost') || backendUrl.includes('127.0.0.1')) {
+        // Local backend is offline, gracefully fall back to production API
+        res = await fetch(`https://api.pkctechs.in/api/ipos${qs}`, {
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store'
+        });
+      } else {
+        throw fetchErr;
+      }
+    }
 
     if (!res.ok) {
       return NextResponse.json(
@@ -27,7 +39,6 @@ export async function GET(request) {
       }
     });
   } catch (error) {
-    console.error('Next.js API route /api/ipos error:', error.message);
     return NextResponse.json(
       { success: false, message: error.message || 'Failed to fetch IPOs' },
       { status: 500 }

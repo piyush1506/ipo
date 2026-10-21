@@ -585,11 +585,62 @@ app.delete(['/api/users/:id/pans/:panId', '/api/v1/users/:id/pans/:panId'], asyn
   }
 });
 
+// Delete user account by ID
+app.delete(['/api/users/:id', '/api/v1/users/:id'], async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (user.expoPushToken) {
+      await PushToken.deleteMany({ token: user.expoPushToken }).catch(() => {});
+    }
+    res.json({ success: true, message: 'Account and associated data deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Web Account Deletion Request (by email) - Google Play Policy Compliant
+app.post(['/api/users/delete-account-request', '/api/v1/users/delete-account-request'], async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ success: false, message: 'A valid email address is required' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail });
+
+    if (user) {
+      if (user.expoPushToken) {
+        await PushToken.deleteMany({ token: user.expoPushToken }).catch(() => {});
+      }
+      await User.deleteOne({ _id: user._id });
+      return res.json({
+        success: true,
+        message: 'Your account, profile information, and cloud-synced data have been permanently deleted.',
+        status: 'DELETED'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'No cloud account was found for this email. Any local app data is erased when you clear storage or uninstall the Banji app.',
+      status: 'NOT_FOUND_OR_LOCAL'
+    });
+  } catch (error) {
+    console.error('[Account Deletion Error]:', error);
+    res.status(500).json({ success: false, message: 'Failed to process account deletion request. Please contact support@pkctechs.in' });
+  }
+});
+
+
 // ═════════════════════════════════════════════════════════════════════
 // PUSH NOTIFICATION ADMIN & CLIENT APIS
 // ═════════════════════════════════════════════════════════════════════
 
-// 1. Mobile App: Register or refresh Expo Push Token
+// 1. Mobile App: Register or refresh FCM Push Token
 app.post(['/api/notifications/register-token', '/api/v1/notifications/register-token'], async (req, res) => {
   try {
     const { token, platform, deviceModel } = req.body;
@@ -664,7 +715,7 @@ app.post(['/api/notifications/broadcast', '/api/v1/notifications/broadcast'], as
     const tokenDocs = await PushToken.find().lean();
     const tokens = tokenDocs
       .map((t) => t.token)
-      .filter((t) => typeof t === 'string' && t.length > 20 && !t.startsWith('ExponentPushToken'));
+      .filter((t) => typeof t === 'string' && t.length > 20);
     if (tokens.length > 0) {
       sendToTokens(tokens, title, body, data).catch((err) =>
         console.warn('[FCM] Multicast background error:', err.message)

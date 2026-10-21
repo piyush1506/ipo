@@ -50,7 +50,14 @@ const ipoSchema = new mongoose.Schema({
         source: String,
         kostak: Number,
         subjectToSauda: Number,
-        estimatedListingPrice: Number
+        estimatedListingPrice: Number,
+        isListed: Boolean,
+        listingGain: Number,
+        listingGainPercentage: Number,
+        listingPrice: Number,
+        listingGainIsActual: Boolean,
+        listingGainSource: String,
+        listingGainUpdatedAt: Date
     },
     registrar: String,
     registrarInfo: {

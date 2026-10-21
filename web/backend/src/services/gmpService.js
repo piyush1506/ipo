@@ -199,6 +199,10 @@ function extractGmpDetails(guruItem, upstoxIpo) {
   const basePrice = upstoxIpo.cutoffPrice || upstoxIpo.priceband?.max || 0;
   const estimatedListingPrice = parseFloat(rawGmp.estimated_listing_price) || (basePrice > 0 ? basePrice + price : 0);
 
+  const now = new Date();
+  const isListed = rawStatus === 'listed' ||
+    (upstoxIpo.listingdate && new Date(upstoxIpo.listingdate) <= now && !['upcoming', 'open', 'closed', 'allotted'].includes(rawStatus));
+
   return {
     price,
     percentage,
@@ -206,7 +210,11 @@ function extractGmpDetails(guruItem, upstoxIpo) {
     source: 'IPOGuru',
     kostak: parseFloat(rawGmp.kostak) || 0,
     subjectToSauda: parseFloat(rawGmp.subject_to_sauda) || 0,
-    estimatedListingPrice
+    estimatedListingPrice,
+    isListed,
+    listingGain: isListed ? price : null,
+    listingGainPercentage: isListed ? percentage : null,
+    listingPrice: isListed ? estimatedListingPrice : null
   };
 }
 
