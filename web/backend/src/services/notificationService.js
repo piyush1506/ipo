@@ -98,6 +98,8 @@ async function sendBroadcast({ title, body, data = {} }) {
       notification: {
         channelId: 'high_importance_channel',
         priority: 'max',
+        icon: 'ic_notification',
+        color: '#10B981',
         defaultSound: true,
         defaultVibrateTimings: true,
         visibility: 'public',
@@ -159,6 +161,8 @@ async function sendToTokens(tokens, title, body, data = {}) {
         notification: {
           channelId: 'high_importance_channel',
           priority: 'max',
+          icon: 'ic_notification',
+          color: '#10B981',
           defaultSound: true,
           defaultVibrateTimings: true,
           visibility: 'public',
