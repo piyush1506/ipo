@@ -5,4 +5,5 @@ dist/
 *.log
 .next/
 .turbo/
-
+serviceAccountKey.json
+*.keystore

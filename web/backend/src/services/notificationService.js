@@ -14,12 +14,39 @@ function getMessagingService() {
   if (messagingInstance) return messagingInstance;
 
   try {
-    const serviceAccountPath =
-      process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-      path.join(__dirname, '../../serviceAccountKey.json');
+    let serviceAccount = null;
 
-    if (fs.existsSync(serviceAccountPath)) {
-      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      try {
+        let raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON.trim();
+        // Handle case if value was wrapped in extra quotes
+        if (raw.startsWith('"') && raw.endsWith('"')) {
+          try {
+            raw = JSON.parse(raw);
+          } catch (_) {}
+        }
+        serviceAccount = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (serviceAccount && serviceAccount.private_key) {
+          serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+        }
+      } catch (parseErr) {
+        console.error('[FCM] Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:', parseErr.message);
+      }
+    }
+
+    if (!serviceAccount) {
+      const serviceAccountPath =
+        process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
+        path.join(__dirname, '../../serviceAccountKey.json');
+
+      if (fs.existsSync(serviceAccountPath)) {
+        serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      } else {
+        console.warn(`[FCM] Warning: serviceAccountKey.json not found at ${serviceAccountPath}`);
+      }
+    }
+
+    if (serviceAccount) {
       const apps = getApps();
       const app = apps.length > 0
         ? apps[0]
@@ -29,8 +56,6 @@ function getMessagingService() {
 
       messagingInstance = getMessaging(app);
       console.log(`[FCM] Firebase Messaging initialized for project: ${serviceAccount.project_id}`);
-    } else {
-      console.warn(`[FCM] Warning: serviceAccountKey.json not found at ${serviceAccountPath}`);
     }
   } catch (err) {
     console.error('[FCM] Error initializing Firebase Admin SDK:', err.message);
