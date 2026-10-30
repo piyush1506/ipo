@@ -199,9 +199,12 @@ function extractGmpDetails(guruItem, upstoxIpo) {
   const basePrice = upstoxIpo.cutoffPrice || upstoxIpo.priceband?.max || 0;
   const estimatedListingPrice = parseFloat(rawGmp.estimated_listing_price) || (basePrice > 0 ? basePrice + price : 0);
 
+  const rawStatus = String(upstoxIpo.status || '').trim().toLowerCase();
   const now = new Date();
+  const listingDate = upstoxIpo.listingdate ? new Date(upstoxIpo.listingdate) : null;
+  // A past listing date is authoritative even if the provider still labels the IPO "closed".
   const isListed = rawStatus === 'listed' ||
-    (upstoxIpo.listingdate && new Date(upstoxIpo.listingdate) <= now && !['upcoming', 'open', 'closed', 'allotted'].includes(rawStatus));
+    (listingDate && !Number.isNaN(listingDate.getTime()) && listingDate <= now);
 
   return {
     price,
