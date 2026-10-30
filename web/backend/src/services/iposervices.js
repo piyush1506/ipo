@@ -45,9 +45,26 @@ async function mapConcurrent(items, limit, fn) {
 }
 
 function toIsoDate(value) {
-  const date = new Date(value);
+  // Upstox candle timestamps are exchange-local (+05:30). Preserve their
+  // calendar date instead of converting midnight to the previous UTC date.
+  if (typeof value === 'string') {
+    const match = value.match(/^(\\d{4}-\\d{2}-\\d{2})/);
+    if (match) return match[1];
+  }
+  const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date.toISOString().slice(0, 10);
+}
+
+function getIndiaToday() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function addDays(isoDate, days) {
@@ -59,28 +76,35 @@ function addDays(isoDate, days) {
 function getInstrumentKeys(ipo) {
   if (!ipo.isin) return [];
 
-  const exchanges = Array.isArray(ipo.exchange) ? ipo.exchange : [];
-  const keys = exchanges
-    .map((exchange) => String(exchange).trim().toUpperCase())
-    .map((exchange) => {
-      if (exchange.includes('BSE')) return `BSE_EQ|${ipo.isin}`;
-      if (exchange.includes('NSE')) return `NSE_EQ|${ipo.isin}`;
-      return null;
-    })
-    .filter(Boolean);
+  const rawExchanges = Array.isArray(ipo.exchange)
+    ? ipo.exchange
+    : String(ipo.exchange || '').split(/[,/|]+/);
+  const exchanges = rawExchanges.map((value) => String(value).trim().toUpperCase());
+  const keys = [];
 
-  return [...new Set([...keys, `NSE_EQ|${ipo.isin}`, `BSE_EQ|${ipo.isin}`])];
+  // Try the IPO's stated listing venue first, then the other venue as a fallback.
+  if (exchanges.some((value) => value.includes('NSE'))) keys.push(`NSE_EQ|${ipo.isin}`);
+  if (exchanges.some((value) => value.includes('BSE'))) keys.push(`BSE_EQ|${ipo.isin}`);
+  if (keys.length === 0) keys.push(`NSE_EQ|${ipo.isin}`, `BSE_EQ|${ipo.isin}`);
+
+  return [...new Set(keys)];
 }
 
 async function fetchListingOpenPrice(instrumentKey, listingDate, headers) {
-  const fromDate = addDays(listingDate, -1);
+  // V3 endpoint order is to_date first, then from_date. A short forward
+  // window allows for provider date handling, but only the actual listing-day
+  // candle is accepted as the listing price.
+  const fromDate = listingDate;
   const toDate = addDays(listingDate, 7);
   const endpoint = `${UPSTOX_MARKET_DATA_BASE}/historical-candle/${encodeURIComponent(instrumentKey)}/days/1/${toDate}/${fromDate}`;
 
   try {
-    const response = await axios.get(endpoint, { headers, timeout: 6000 });
+    const response = await axios.get(endpoint, { headers, timeout: 10000 });
     const candles = response.data?.data?.candles;
-    if (!Array.isArray(candles)) return null;
+    if (!Array.isArray(candles)) {
+      console.warn(`[Upstox History] No candles returned for ${instrumentKey}; status=${response.data?.status || 'unknown'}`);
+      return null;
+    }
 
     const listingCandle = candles
       .filter((candle) => Array.isArray(candle) && candle.length >= 2)
@@ -88,26 +112,37 @@ async function fetchListingOpenPrice(instrumentKey, listingDate, headers) {
         date: toIsoDate(candle[0]),
         open: Number(candle[1])
       }))
-      .filter((candle) => candle.date && candle.date >= listingDate && candle.open > 0)
-      .sort((a, b) => a.date.localeCompare(b.date))[0];
+      .find((candle) => candle.date === listingDate && Number.isFinite(candle.open) && candle.open > 0);
 
     return listingCandle || null;
-  } catch (_) {
+  } catch (error) {
+    const status = error.response?.status || 'network';
+    const apiMessage = error.response?.data?.errors?.[0]?.message || error.response?.data?.message || error.message;
+    console.warn(`[Upstox History] Request failed for ${instrumentKey} on ${listingDate}: HTTP ${status} - ${apiMessage}`);
     return null;
   }
 }
 
 async function enrichListedIposWithMarketData(ipos, headers) {
+  const today = getIndiaToday();
   const listedIpos = ipos.filter((ipo) => {
     const listingDate = toIsoDate(ipo.listingdate);
-    return listingDate && listingDate <= toIsoDate(new Date()) && ipo.isin;
+    return listingDate && listingDate <= today && ipo.isin;
   });
+
+  const missingIsinCount = ipos.filter((ipo) => {
+    const listingDate = toIsoDate(ipo.listingdate);
+    return listingDate && listingDate <= today && !ipo.isin;
+  }).length;
 
   let actualListingPriceCount = 0;
   await mapConcurrent(listedIpos, 4, async (ipo) => {
     const listingDate = toIsoDate(ipo.listingdate);
     const issuePrice = Number(ipo.cutoffPrice || ipo.priceband?.max || 0);
-    if (!listingDate || issuePrice <= 0) return null;
+    if (!listingDate || issuePrice <= 0) {
+      console.warn(`[Upstox History] Skipping ${ipo.companyName || ipo.ipoId}: missing listing date or valid issue price.`);
+      return null;
+    }
 
     for (const instrumentKey of getInstrumentKeys(ipo)) {
       const candle = await fetchListingOpenPrice(instrumentKey, listingDate, headers);
@@ -121,17 +156,18 @@ async function enrichListedIposWithMarketData(ipos, headers) {
         listingGain,
         listingGainPercentage: Number(((listingGain / issuePrice) * 100).toFixed(2)),
         listingGainIsActual: true,
-        listingGainSource: 'Upstox historical market data',
+        listingGainSource: 'Upstox V3 historical candle data',
         listingGainUpdatedAt: new Date(`${candle.date}T00:00:00.000Z`)
       };
       actualListingPriceCount += 1;
       return ipo;
     }
 
+    console.warn(`[Upstox History] No listing-day candle found for ${ipo.companyName || ipo.ipoId} (ISIN ${ipo.isin}, listing date ${listingDate}).`);
     return null;
   });
 
-  console.log(`[Sync] Retrieved actual Upstox listing prices for ${actualListingPriceCount} / ${listedIpos.length} listed IPOs.`);
+  console.log(`[Sync] Retrieved actual Upstox listing prices for ${actualListingPriceCount} / ${listedIpos.length} listed IPOs; ${missingIsinCount} had no ISIN.`);
 }
 
 /**
@@ -220,13 +256,32 @@ async function executeSyncIPOs() {
           registrar: source.registrar_info?.registrar || ''
         },
         rhpUrl: source.rhp_url || null,
-        status: (basic.inferredStatus || (source.status === 'open' ? 'Open' : source.status === 'upcoming' ? 'Upcoming' : 'Closed')),
+        status: (() => {
+          const today = getIndiaToday();
+          const listingDate = toIsoDate(source.timeline?.listing_date || basic.timeline?.listing_date || source.listing_date || basic.listing_date);
+          const allotmentDate = toIsoDate(source.timeline?.allotment_date || basic.timeline?.allotment_date);
+          const providerStatus = String(source.status || '').trim().toLowerCase();
+          if (listingDate && listingDate <= today) return 'Listed';
+          if (allotmentDate && allotmentDate <= today) return 'Allotted';
+          if (providerStatus === 'open' || providerStatus === 'upcoming' || providerStatus === 'closed') {
+            return providerStatus.charAt(0).toUpperCase() + providerStatus.slice(1);
+          }
+          return basic.inferredStatus || 'Closed';
+        })(),
         source: 'upstox',
         lastupdated: new Date()
       };
     });
 
     const validIpos = detailedIpos.filter(Boolean);
+
+    // Load existing records before enrichment so verified historical listing prices
+    // are not overwritten when the provider temporarily has no candle response.
+    const mongoose = require('mongoose');
+    const existingIpos = mongoose.connection.readyState === 1 && validIpos.length > 0
+      ? await Ipo.find({ ipoId: { $in: validIpos.map((i) => i.ipoId) } }).lean()
+      : [];
+    const existingMap = new Map(existingIpos.map((item) => [item.ipoId, item]));
 
     // Enrich Upstox IPOs with live GMP matched from IPOGuru
     try {
@@ -240,24 +295,46 @@ async function executeSyncIPOs() {
     // intentionally runs during synchronization, never on user read paths.
     await enrichListedIposWithMarketData(validIpos, headers);
 
-    // Bulk upsert into MongoDB using bulkWrite for maximum speed
-    if (require('mongoose').connection.readyState === 1 && validIpos.length > 0) {
-      // 1. Fetch existing to compare statuses
-      const existingIpos = await Ipo.find({ ipoId: { $in: validIpos.map(i => i.ipoId) } }).lean();
-      const existingMap = new Map(existingIpos.map(i => [i.ipoId, i]));
-      
-      const { notifyAllUsers } = require('./notificationService');
+    // Retain previously verified listing-day prices if this sync could not
+    // retrieve a fresh candle. Never replace an actual price with a GMP estimate.
+    for (const ipoData of validIpos) {
+      const previous = existingMap.get(ipoData.ipoId);
+      if (previous?.gmp?.listingGainIsActual && !ipoData.gmp?.listingGainIsActual) {
+        ipoData.gmp = {
+          ...ipoData.gmp,
+          isListed: true,
+          listingPrice: previous.gmp.listingPrice,
+          listingGain: previous.gmp.listingGain,
+          listingGainPercentage: previous.gmp.listingGainPercentage,
+          listingGainIsActual: true,
+          listingGainSource: previous.gmp.listingGainSource || 'Previously verified Upstox market data',
+          listingGainUpdatedAt: previous.gmp.listingGainUpdatedAt
+        };
+      }
+    }
 
-      // 2. Trigger notifications if status changed
+    // Bulk upsert into MongoDB using bulkWrite for maximum speed
+    if (mongoose.connection.readyState === 1 && validIpos.length > 0) {
+      // Notifications are best-effort: FCM outages must never block IPO persistence.
       for (const ipoData of validIpos) {
         const existing = existingMap.get(ipoData.ipoId);
         if (existing && existing.status !== ipoData.status) {
+          let notification = null;
           if (ipoData.status === 'Open') {
-            await notifyAllUsers('IPO Opened! 🚀', `${ipoData.companyName} is now open for subscription.`, { ipoId: ipoData.ipoId });
+            notification = ['IPO Opened! 🚀', `${ipoData.companyName} is now open for subscription.`];
           } else if (ipoData.status === 'Allotted') {
-            await notifyAllUsers('Allotment Declared! 🎉', `The allotment for ${ipoData.companyName} is out. Check your status!`, { ipoId: ipoData.ipoId });
+            notification = ['Allotment Declared! 🎉', `The allotment for ${ipoData.companyName} is out. Check your status!`];
           } else if (ipoData.status === 'Listed') {
-            await notifyAllUsers('IPO Listed! 📈', `${ipoData.companyName} has just been listed.`, { ipoId: ipoData.ipoId });
+            notification = ['IPO Listed! 📈', `${ipoData.companyName} has just been listed.`];
+          }
+
+          if (notification) {
+            try {
+              const { notifyAllUsers } = require('./notificationService');
+              await notifyAllUsers(notification[0], notification[1], { ipoId: ipoData.ipoId });
+            } catch (notificationError) {
+              console.warn(`[FCM] Skipping notification for ${ipoData.ipoId}; IPO sync will continue:`, notificationError.message);
+            }
           }
         }
       }
