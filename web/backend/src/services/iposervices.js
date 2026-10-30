@@ -95,7 +95,9 @@ async function fetchListingOpenPrice(instrumentKey, listingDate, headers) {
   // window allows for provider date handling, but only the actual listing-day
   // candle is accepted as the listing price.
   const fromDate = listingDate;
-  const toDate = addDays(listingDate, 7);
+  const toDate = addDays(listingDate, 7) > getIndiaToday()
+    ? getIndiaToday()
+    : addDays(listingDate, 7);
   const endpoint = `${UPSTOX_MARKET_DATA_BASE}/historical-candle/${encodeURIComponent(instrumentKey)}/days/1/${toDate}/${fromDate}`;
 
   try {
