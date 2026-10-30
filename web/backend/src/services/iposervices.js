@@ -48,7 +48,7 @@ function toIsoDate(value) {
   // Upstox candle timestamps are exchange-local (+05:30). Preserve their
   // calendar date instead of converting midnight to the previous UTC date.
   if (typeof value === 'string') {
-    const match = value.match(/^(\\d{4}-\\d{2}-\\d{2})/);
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
     if (match) return match[1];
   }
   const date = value instanceof Date ? value : new Date(value);
