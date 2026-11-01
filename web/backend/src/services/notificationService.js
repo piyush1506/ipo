@@ -85,11 +85,18 @@ async function sendBroadcast({ title, body, data = {} }) {
     }
   }
 
+  // Company logo image URL to display as large icon on notification
+  const logoUrl =
+    (data && (data.imageUrl || data.image || data.logo)) ||
+    process.env.APP_LOGO_URL ||
+    'https://raw.githubusercontent.com/piyush1506/ipo/main/flutter_app/assets/icon.png';
+
   const message = {
     topic: 'all_users',
     notification: {
       title,
       body,
+      imageUrl: logoUrl,
     },
     data: stringData,
     android: {
@@ -99,7 +106,8 @@ async function sendBroadcast({ title, body, data = {} }) {
         channelId: 'high_importance_channel',
         priority: 'max',
         icon: 'ic_notification',
-        color: '#1029B9',
+        color: '#4F46E5',
+        imageUrl: logoUrl,
         defaultSound: true,
         defaultVibrateTimings: true,
         visibility: 'public',
@@ -118,7 +126,11 @@ async function sendBroadcast({ title, body, data = {} }) {
           sound: 'default',
           badge: 1,
           contentAvailable: true,
+          'mutable-content': 1,
         },
+      },
+      fcmOptions: {
+        imageUrl: logoUrl,
       },
     },
   };
@@ -149,11 +161,21 @@ async function sendToTokens(tokens, title, body, data = {}) {
   let totalFailure = 0;
   const invalidTokens = [];
 
+  // Company logo image URL to display as large icon on notification
+  const logoUrl =
+    (data && (data.imageUrl || data.image || data.logo)) ||
+    process.env.APP_LOGO_URL ||
+    'https://raw.githubusercontent.com/piyush1506/ipo/main/flutter_app/assets/icon.png';
+
   for (let i = 0; i < tokens.length; i += batchSize) {
     const batch = tokens.slice(i, i + batchSize);
     const response = await messaging.sendEachForMulticast({
       tokens: batch,
-      notification: { title, body },
+      notification: {
+        title,
+        body,
+        imageUrl: logoUrl,
+      },
       data: stringData,
       android: {
         priority: 'high',
@@ -162,7 +184,8 @@ async function sendToTokens(tokens, title, body, data = {}) {
           channelId: 'high_importance_channel',
           priority: 'max',
           icon: 'ic_notification',
-          color: '#1029B9',
+          color: '#4F46E5',
+          imageUrl: logoUrl,
           defaultSound: true,
           defaultVibrateTimings: true,
           visibility: 'public',
@@ -178,7 +201,11 @@ async function sendToTokens(tokens, title, body, data = {}) {
             sound: 'default',
             badge: 1,
             contentAvailable: true,
+            'mutable-content': 1,
           },
+        },
+        fcmOptions: {
+          imageUrl: logoUrl,
         },
       },
     });

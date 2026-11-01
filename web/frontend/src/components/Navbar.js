@@ -49,13 +49,14 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
     }
   };
 
+  // Items with `href` render as <a> tags (crawlable by Google). Tab-only items render as <button>.
   const navLinks = [
     { id: 'OPEN', label: 'Open IPOs', hasPulse: true },
     { id: 'UPCOMING', label: 'Upcoming', hasPulse: false },
     { id: 'CLOSED', label: 'Recently Listed', hasPulse: false },
     { id: 'SME', label: 'SME Platform', hasPulse: false },
-    { id: 'ALLOTMENT', label: 'Allotment Status', hasPulse: false },
-    { id: 'BLOG', label: 'IPO Blog & Guides', hasPulse: false },
+    { id: 'ALLOTMENT', label: 'Allotment Status', hasPulse: false, href: '/allotment-status' },
+    { id: 'BLOG', label: 'IPO Blog & Guides', hasPulse: false, href: '/blog' },
   ];
 
   return (
@@ -123,7 +124,7 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
           />
         </div>
 
-        {/* Desktop Navigation Links */}
+        {/* Desktop Navigation Links — pages use <Link> for crawlability, tabs use <button> */}
         <nav className="hidden md:flex items-center gap-4 lg:gap-5">
           {navLinks.map((item) => {
             const isActive =
@@ -132,13 +133,25 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
               (item.id === 'GUIDE' && pathname === '/ipo-guide') ||
               (pathname === '/' && activeTab === item.id);
 
+            const className = `text-xs font-medium flex items-center gap-1.5 py-1 transition-colors cursor-pointer bg-transparent border-none ${
+              isActive ? 'font-bold text-slate-900 border-b-2 border-slate-700' : 'text-slate-600 hover:text-slate-900'
+            }`;
+
+            // Render crawlable <a> for pages, <button> for tab switches
+            if (item.href) {
+              return (
+                <Link key={item.id} href={item.href} className={className}>
+                  {item.hasPulse && <span className="pulse-live"></span>}
+                  {item.label}
+                </Link>
+              );
+            }
+
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`text-xs font-medium flex items-center gap-1.5 py-1 transition-colors cursor-pointer bg-transparent border-none ${
-                  isActive ? 'font-bold text-slate-900 border-b-2 border-slate-700' : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={className}
               >
                 {item.hasPulse && <span className="pulse-live"></span>}
                 {item.label}
@@ -203,22 +216,35 @@ export default function Navbar({ searchQuery, onSearchChange, onSelectTab, activ
             />
           </div>
 
-          {navLinks.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavClick(item.id)}
-              className={`text-xs text-left py-2 flex items-center gap-2 cursor-pointer bg-transparent border-none ${
-                (pathname === '/' && activeTab === item.id) ||
-                (item.id === 'GUIDE' && pathname === '/ipo-guide') ||
-                (item.id === 'BLOG' && pathname.startsWith('/blog'))
-                  ? 'font-bold text-slate-900 bg-slate-50 px-2 rounded-md'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {item.hasPulse && <span className="pulse-live"></span>}
-              {item.label}
-            </button>
-          ))}
+          {navLinks.map((item) => {
+            const mobileClass = `text-xs text-left py-2 flex items-center gap-2 cursor-pointer bg-transparent border-none ${
+              (pathname === '/' && activeTab === item.id) ||
+              (item.id === 'GUIDE' && pathname === '/ipo-guide') ||
+              (item.id === 'BLOG' && pathname.startsWith('/blog'))
+                ? 'font-bold text-slate-900 bg-slate-50 px-2 rounded-md'
+                : 'text-slate-600 hover:text-slate-900'
+            }`;
+
+            if (item.href) {
+              return (
+                <Link key={item.id} href={item.href} onClick={() => setMobileMenuOpen(false)} className={mobileClass}>
+                  {item.hasPulse && <span className="pulse-live"></span>}
+                  {item.label}
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                className={mobileClass}
+              >
+                {item.hasPulse && <span className="pulse-live"></span>}
+                {item.label}
+              </button>
+            );
+          })}
 
           <div className="pt-2 mt-2 border-t border-slate-100 flex flex-col gap-2 text-xs">
             <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="text-slate-600 hover:text-slate-900 py-1">

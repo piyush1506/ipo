@@ -12,7 +12,7 @@ const inter = Inter({
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://pkctechs.in').replace(/\/$/, '');
 
-// Structured Data for Google SEO
+// Structured Data for Google SEO — rendered server-side for crawler visibility
 const structuredData = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -21,7 +21,9 @@ const structuredData = {
       '@id': `${siteUrl}/#website`,
       'url': siteUrl,
       'name': 'pkctechs',
-      'description': 'Latest IPO Information, Subscription Status, and Allotment Status Checking Portal.',
+      'alternateName': 'pkctechs IPO',
+      'description': 'Latest IPO Information, Subscription Status, and Allotment Status Checking Portal for Indian Mainboard & SME IPOs.',
+      'inLanguage': 'en-IN',
       'publisher': {
         '@id': `${siteUrl}/#organization`,
       },
@@ -44,79 +46,98 @@ const structuredData = {
       'logo': {
         '@type': 'ImageObject',
         'url': `${siteUrl}/icon.svg`,
+        'width': 512,
+        'height': 512,
         'caption': 'pkctechs Logo',
       },
       'sameAs': [
         'https://twitter.com/pkctechs',
         'https://linkedin.com/company/pkctechs',
       ],
+      'contactPoint': {
+        '@type': 'ContactPoint',
+        'contactType': 'customer support',
+        'url': `${siteUrl}/contact`,
+      },
     },
     {
-      '@type': 'ItemList',
-      '@id': `${siteUrl}/#sitelinks`,
-      'name': 'pkctechs IPO Sitelinks',
+      '@type': 'BreadcrumbList',
+      '@id': `${siteUrl}/#breadcrumb`,
       'itemListElement': [
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 1,
-          'name': 'Mainboard & SME IPO Allotment Status',
-          'description': 'Direct official registrar portals and PAN verification tools for Link Intime, KFintech, and Bigshare.',
-          'url': `${siteUrl}/allotment-status`,
+          'name': 'Home',
+          'item': siteUrl,
         },
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 2,
-          'name': 'IPO Dashboard (Mainboard & SME)',
-          'description': 'Live Indian IPO dashboard tracking ongoing bidding, price bands, GMP, and issue sizes on NSE and BSE.',
-          'url': `${siteUrl}/`,
+          'name': 'IPO Allotment Status',
+          'item': `${siteUrl}/allotment-status`,
         },
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 3,
-          'name': 'Complete IPO Allotment & Bidding Guide',
-          'description': 'Step-by-step guide to IPO application rules, SEBI allotment allotment mechanisms, UPI mandates, and listing gains.',
-          'url': `${siteUrl}/ipo-guide`,
+          'name': 'IPO Blog & Guides',
+          'item': `${siteUrl}/blog`,
         },
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 4,
-          'name': 'IPO News, Analysis & Insights',
-          'description': 'Latest primary equity market news, company fundamentals, anchor investor reports, and IPO reviews.',
-          'url': `${siteUrl}/blog`,
+          'name': 'IPO Guide',
+          'item': `${siteUrl}/ipo-guide`,
         },
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 5,
-          'name': 'About pkctechs Platform',
-          'description': 'Learn about pkctechs real-time IPO intelligence, data sources, and editorial standards.',
-          'url': `${siteUrl}/about`,
+          'name': 'About Us',
+          'item': `${siteUrl}/about`,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 6,
+          'name': 'Contact Us',
+          'item': `${siteUrl}/contact`,
         },
       ],
     },
     {
-      '@type': 'Article',
-      '@id': `${siteUrl}/#article`,
-      'name': 'pkctechs IPO Intelligence',
-      'description': 'Real-time Indian IPO tracking platform with price bands, lot sizes, live subscription rates, and allotment status.',
-      'author': {
-        '@type': 'Organization',
-        '@id': `${siteUrl}/#organization`,
-        'name': 'pkctechs',
-      },
-      'publisher': {
-        '@type': 'Organization',
-        '@id': `${siteUrl}/#organization`,
-        'name': 'pkctechs',
-        'logo': {
-          '@type': 'ImageObject',
-          'url': `${siteUrl}/icon.svg`,
-          'caption': 'pkctechs Logo',
+      '@type': 'ItemList',
+      '@id': `${siteUrl}/#sitelinks`,
+      'name': 'pkctechs Site Navigation',
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'IPO Allotment Status Checker',
+          'url': `${siteUrl}/allotment-status`,
         },
-      },
-      'mainEntityOfPage': {
-        '@type': 'WebPage',
-        '@id': `${siteUrl}`,
-      },
+        {
+          '@type': 'ListItem',
+          'position': 2,
+          'name': 'IPO Blog & Analysis',
+          'url': `${siteUrl}/blog`,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 3,
+          'name': 'Complete IPO Guide',
+          'url': `${siteUrl}/ipo-guide`,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 4,
+          'name': 'About pkctechs',
+          'url': `${siteUrl}/about`,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 5,
+          'name': 'Contact Us',
+          'url': `${siteUrl}/contact`,
+        },
+      ],
     },
   ],
 };
@@ -217,6 +238,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        {/* JSON-LD Structured Data — rendered server-side in <head> so crawlers always see it */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      </head>
       <body className={inter.className} style={{ margin: 0, padding: 0 }} suppressHydrationWarning>
         {children}
         <CookieBanner />
@@ -237,14 +265,6 @@ export default function RootLayout({ children }) {
               gtag('config', 'G-8TEVCHMFE9', { page_path: window.location.pathname });
             `,
           }}
-        />
-
-        {/* JSON-LD Structured Data for Google SEO */}
-        <Script
-          id="schema-structured-data"
-          type="application/ld+json"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </body>
     </html>

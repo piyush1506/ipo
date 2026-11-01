@@ -3,11 +3,26 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 
 export const metadata = {
-  title: 'Official IPO Registrars Directory | pkctechs',
-  description: 'Official direct portals and contact information for major Indian IPO registrars including Link Intime, KFin Technologies, Bigshare Services, and Maashitla.',
+  title: 'IPO Allotment Status Checker | Official Registrars Directory | pkctechs',
+  description: 'Check your IPO allotment status via official registrar portals. Direct links and contact info for Link Intime, KFin Technologies, Bigshare Services, and Maashitla.',
   alternates: {
     canonical: 'https://pkctechs.in/allotment-status',
   },
+  openGraph: {
+    title: 'IPO Allotment Status Checker | pkctechs',
+    description: 'Official direct portals and contact information for major Indian IPO registrars.',
+    url: 'https://pkctechs.in/allotment-status',
+    type: 'website',
+  },
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  'itemListElement': [
+    { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://pkctechs.in' },
+    { '@type': 'ListItem', 'position': 2, 'name': 'IPO Allotment Status', 'item': 'https://pkctechs.in/allotment-status' },
+  ],
 };
 
 export default function RegistrarsDirectoryPage() {
@@ -64,6 +79,7 @@ export default function RegistrarsDirectoryPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <Navbar />
 
       <main className="max-w-[1000px] mx-auto px-5 sm:px-6 py-10 w-full">

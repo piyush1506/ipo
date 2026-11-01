@@ -8,12 +8,29 @@ export const metadata = {
   alternates: {
     canonical: 'https://pkctechs.in/about',
   },
+  openGraph: {
+    title: 'About Us | pkctechs IPO Intelligence Platform',
+    description: 'Learn about pkctechs, our mission to simplify Indian IPO tracking, real-time data streaming architecture, and editorial standards.',
+    url: 'https://pkctechs.in/about',
+    type: 'website',
+  },
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  'itemListElement': [
+    { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://pkctechs.in' },
+    { '@type': 'ListItem', 'position': 2, 'name': 'About Us', 'item': 'https://pkctechs.in/about' },
+  ],
 };
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <Navbar />
+
 
       <main className="max-w-[900px] mx-auto px-5 sm:px-6 py-10 w-full">
         {/* Breadcrumb */}

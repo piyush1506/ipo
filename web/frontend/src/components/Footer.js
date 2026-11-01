@@ -3,8 +3,8 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="bg-white border-t border-slate-200 mt-20 px-6 pt-14 pb-8 text-slate-600">
-      <div className="max-w-[1240px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+    <footer className="bg-white border-t border-slate-200 mt-20 px-6 pt-14 pb-8 text-slate-600" role="contentinfo">
+      <nav aria-label="Footer navigation" className="max-w-[1240px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 mb-10">
         {/* Brand Col */}
         <div className="md:col-span-2">
           <div className="flex items-center gap-2 mb-3">
@@ -73,7 +73,7 @@ export default function Footer() {
             <li><Link href="/contact" className="text-slate-600 hover:text-slate-900 transition-colors">Contact Us</Link></li>
           </ul>
         </div>
-      </div>
+      </nav>
 
       {/* Mandatory Statutory Disclaimer Callout */}
       <div className="max-w-[1240px] mx-auto p-4 bg-slate-50 rounded-xl border border-slate-200 mb-6 text-[11px] text-slate-500 leading-relaxed">

@@ -8,12 +8,29 @@ export const metadata = {
   alternates: {
     canonical: 'https://pkctechs.in/ipo-guide',
   },
+  openGraph: {
+    title: 'Complete IPO Allotment & Bidding Guide 2026 | pkctechs',
+    description: 'Master Indian IPOs: allotment rules, SEBI lottery, ASBA UPI mandates, and step-by-step guides.',
+    url: 'https://pkctechs.in/ipo-guide',
+    type: 'article',
+  },
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  'itemListElement': [
+    { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://pkctechs.in' },
+    { '@type': 'ListItem', 'position': 2, 'name': 'IPO Guide', 'item': 'https://pkctechs.in/ipo-guide' },
+  ],
 };
 
 export default function IpoGuidePage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <Navbar />
+
 
       <main className="max-w-[900px] mx-auto px-5 sm:px-6 py-10 w-full">
         {/* Breadcrumb */}
