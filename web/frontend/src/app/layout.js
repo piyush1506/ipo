@@ -1,5 +1,7 @@
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import "./globals.css";
 import CookieBanner from '../components/CookieBanner';
 
@@ -248,6 +250,8 @@ export default function RootLayout({ children }) {
       <body className={inter.className} style={{ margin: 0, padding: 0 }} suppressHydrationWarning>
         {children}
         <CookieBanner />
+        <Analytics />
+        <SpeedInsights />
 
         {/* Google Analytics (gtag.js) */}
         <Script
