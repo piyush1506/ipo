@@ -330,9 +330,9 @@ function HomeContent({ initialIpos = [] }) {
         <section className="max-w-[1240px] mx-auto mt-6 px-5 w-full">
           <div className="flex items-center gap-1.5 mb-3">
             <span className="text-sm">✨</span>
-            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
               In the Spotlight
-            </h3>
+            </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {spotlightIpos.map((ipo) => {
@@ -358,9 +358,9 @@ function HomeContent({ initialIpos = [] }) {
                       {ipo.Symbol ? ipo.Symbol.slice(0, 3) : 'IPO'}
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold text-slate-800 leading-tight">
+                      <h3 className="text-sm font-semibold text-slate-800 leading-tight">
                         {ipo.companyName || ipo.ipoName}
-                      </h4>
+                      </h3>
                       <p className="text-xs text-slate-500 mt-0.5 font-normal">
                         Min. Inv: <span className="font-semibold text-slate-700">{minInv > 0 ? formatCurrency(minInv) : 'To Be Announced'}</span> • {ipo.totalSubscription || '0.0'}x Subscribed
                       </p>
@@ -410,6 +410,9 @@ function HomeContent({ initialIpos = [] }) {
           {/* Right Controls: Sort & Grid/Table View Switcher */}
           <div className="flex gap-2 items-center">
             <select
+              id="ipo-sort-select"
+              name="sortBy"
+              aria-label="Sort IPOs by"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="py-1.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 cursor-pointer outline-none focus:border-slate-500"

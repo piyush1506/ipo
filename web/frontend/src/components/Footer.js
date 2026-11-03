@@ -83,14 +83,14 @@ export default function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="max-w-[1240px] mx-auto pt-5 border-t border-slate-200 flex flex-wrap justify-between items-center gap-3 text-xs text-slate-400 font-normal">
+      <div className="max-w-[1240px] mx-auto pt-5 border-t border-slate-200 flex flex-wrap justify-between items-center gap-3 text-xs text-slate-500 font-normal">
         <span suppressHydrationWarning>© {new Date().getFullYear()} pkctechs. All rights reserved. For educational and informational purposes only.</span>
         <div className="flex gap-4">
-          <Link href="/privacy-policy" className="hover:text-slate-600 transition-colors">Privacy</Link>
-          <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
-          <Link href="/disclaimer" className="hover:text-slate-600 transition-colors">Disclaimer</Link>
+          <Link href="/privacy-policy" className="text-slate-500 hover:text-slate-800 transition-colors">Privacy</Link>
+          <Link href="/terms" className="text-slate-500 hover:text-slate-800 transition-colors">Terms</Link>
+          <Link href="/disclaimer" className="text-slate-500 hover:text-slate-800 transition-colors">Disclaimer</Link>
           <Link href="/delete-account" className="hover:text-rose-600 transition-colors">Delete Account</Link>
-          <Link href="/contact" className="hover:text-slate-600 transition-colors">Contact</Link>
+          <Link href="/contact" className="text-slate-500 hover:text-slate-800 transition-colors">Contact</Link>
         </div>
       </div>
     </footer>

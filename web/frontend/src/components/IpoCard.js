@@ -136,7 +136,7 @@ export default function IpoCard({ ipo, onViewDetails, onShare }) {
 
         <section className="grid grid-cols-2 divide-x divide-slate-200 border-b border-slate-200 pb-2">
           <div className="pr-2">
-            <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">Price Band</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-600">Price Band</p>
             <p className="mt-0.5 text-sm font-bold leading-snug text-slate-900">
               {minPrice > 0 && maxPrice > 0
                 ? minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice}–${maxPrice}`
@@ -144,7 +144,7 @@ export default function IpoCard({ ipo, onViewDetails, onShare }) {
             </p>
           </div>
           <div className="px-2">
-            <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">Lot Size</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-600">Lot Size</p>
             <p className="mt-0.5 text-sm font-bold leading-snug text-slate-900">
               {hasLotSize ? `${lotSize.toLocaleString('en-IN')} Shares` : 'To Be Announced'}
             </p>
@@ -157,7 +157,7 @@ export default function IpoCard({ ipo, onViewDetails, onShare }) {
               <CalendarBlank size={12} weight="bold" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">Open Date</p>
+              <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-600">Open Date</p>
               <p className="mt-0.5 text-xs font-bold text-slate-800">{openDate}</p>
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function IpoCard({ ipo, onViewDetails, onShare }) {
               <CalendarBlank size={12} weight="bold" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">Close Date</p>
+              <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-600">Close Date</p>
               <p className="mt-0.5 text-xs font-bold text-slate-800">{closeDate}</p>
             </div>
           </div>

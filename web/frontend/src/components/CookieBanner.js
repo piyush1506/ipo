@@ -9,8 +9,13 @@ export default function CookieBanner() {
     try {
       const consent = localStorage.getItem('pkc_cookie_consent');
       if (!consent) {
-        // Show banner after brief delay
-        const timer = setTimeout(() => setShowBanner(true), 1200);
+        // Defer mounting so it does not block or hijack Largest Contentful Paint (LCP)
+        const show = () => setShowBanner(true);
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          const id = window.requestIdleCallback(show, { timeout: 3500 });
+          return () => window.cancelIdleCallback(id);
+        }
+        const timer = setTimeout(show, 3500);
         return () => clearTimeout(timer);
       }
     } catch (e) {
