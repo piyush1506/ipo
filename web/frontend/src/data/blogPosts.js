@@ -475,6 +475,75 @@ export const BLOG_POSTS = [
         content: "For retail investors, anchor lock-in expiry dates can create trading opportunities. When the 30-day lock-in expires, some anchor investors may start selling, potentially putting downward pressure on the stock price. Similarly, the 90-day lock-in expiry can lead to increased volatility. Retail investors should monitor these dates and adjust their strategies accordingly."
       }
     ]
+  },
+  {
+    id: 12,
+    slug: "flipkart-ipo-date-price-band-valuation-updates",
+    title: "Flipkart IPO Date, Expected Price Band, Valuation, and News Updates",
+    summary: "E-commerce giant Flipkart, backed by Walmart, is preparing for one of India's most highly anticipated public market listings. Here is the verified Pre-DRHP status, expected timeline, valuation, and FAQs.",
+    category: "IPO News & Analysis",
+    readTime: "5 min read",
+    publishDate: "November 3, 2026",
+    author: DEFAULT_AUTHOR,
+    tags: ["Flipkart IPO", "Walmart", "Pre-DRHP", "Upcoming IPOs", "E-commerce", "NSE BSE"],
+    featured: true,
+    tableOfContents: [
+      { id: "current-status-pre-drhp", title: "1. Flipkart IPO Current Status: Pre-DRHP" },
+      { id: "expected-details-estimates", title: "2. Expected IPO Details & Market Estimates" },
+      { id: "corporate-restructuring", title: "3. Corporate Re-domiciling & Listing Framework" },
+      { id: "frequently-asked-questions", title: "4. Frequently Asked Questions (FAQs)" },
+      { id: "statutory-disclaimer", title: "5. Statutory Regulatory Disclaimer" }
+    ],
+    sections: [
+      {
+        id: "current-status-pre-drhp",
+        heading: "1. Flipkart IPO Current Status: Pre-DRHP",
+        content: "E-commerce leader Flipkart, backed by Walmart, is preparing for one of the Indian primary market's most anticipated listings. As a retail and digital supply-chain pioneer, the company's prospective public market debut is closely monitored by institutional and retail investors alike.\n\nFlipkart has not yet formally filed its Draft Red Herring Prospectus (DRHP) with the Securities and Exchange Board of India (SEBI). Because regulatory filings are not yet submitted, official parameters—including the exact bidding dates, lot size, issue structure, and price band—are strictly To Be Announced (TBA).\n\nInvestors are strongly advised that any precise per-share price or quota floating online prior to official SEBI clearance is entirely speculative."
+      },
+      {
+        id: "expected-details-estimates",
+        heading: "2. Expected IPO Details & Market Estimates",
+        content: "While regulatory approvals are pending, institutional projections and verified financial press reports point toward the following estimated framework:\n\n• Expected Timeline: Market reports indicate a targeted listing window between late 2026 and 2027, calibrated to macroeconomic liquidity and domestic market sentiment.\n• Target Issue Size: Market analysts project the public issue could raise approximately $8 Billion to $10 Billion (₹67,000 to ₹83,000 Crores), which would rank it among the largest offerings on Dalal Street.\n• Projected Valuation: Pre-IPO valuation estimates position the company between $40 Billion and $70 Billion, supported by continuous expansion in quick commerce, logistics, and supply chain infrastructure.\n• Listing Exchanges: The company is expected to list dual-shares on the National Stock Exchange (NSE) and Bombay Stock Exchange (BSE)."
+      },
+      {
+        id: "corporate-restructuring",
+        heading: "3. Corporate Re-domiciling & Listing Framework",
+        content: "A major precursor to the public offering has been Flipkart's strategic steps to shift its parent corporate domicile back to India from Singapore. Similar to other leading Indian tech giants re-domiciling domestically, this transition simplifies regulatory tax compliance, aligns governance directly under SEBI jurisdiction, and allows domestic retail investors frictionless direct participation.\n\nWalmart continues to serve as the majority anchor shareholder, providing deep governance stability and long-term balance sheet backing."
+      },
+      {
+        id: "frequently-asked-questions",
+        heading: "4. Frequently Asked Questions (FAQs)",
+        content: "Q: What is the official price band for the Flipkart IPO?\nA: The official price band has not been announced. Any precise per-share pricing circulating online prior to the official SEBI DRHP filing is speculative.\n\nQ: What is the expected Flipkart IPO date?\nA: The official date has not been locked in yet, as Flipkart is currently in Pre-DRHP status. Market analysts project a potential listing window between late 2026 and 2027.\n\nQ: How can I check the Flipkart IPO allotment status?\nA: Once the issue opens for bidding and closes, the allotment status will be processed by the designated official registrar (such as Link Intime or KFin Technologies) and will be trackable in real-time via the pkctechs Allotment Directory."
+      },
+      {
+        id: "statutory-disclaimer",
+        heading: "5. Statutory Regulatory Disclaimer",
+        content: "pkctechs is an independent market intelligence portal and is NOT registered with SEBI as an Investment Advisor or Research Analyst. None of the figures or projections in this article constitute financial advice or investment recommendations. All metrics discussed are derived from publicly available financial news sources and analyst reports. Investors must review the formal Draft Red Herring Prospectus (DRHP) upon official SEBI publication before bidding."
+      }
+    ],
+    faqs: [
+      {
+        question: "What is the Flipkart IPO date?",
+        answer: "The official date for the Flipkart IPO has not been announced yet, as the company has not filed its DRHP with SEBI. Market estimates suggest a potential listing window between late 2026 and 2027."
+      },
+      {
+        question: "What is the expected share price band for Flipkart?",
+        answer: "The exact share price band and lot size for Flipkart are currently To Be Announced (TBA). Official pricing parameters will only be locked in once the draft prospectus is approved by SEBI."
+      },
+      {
+        question: "How can I check the Flipkart IPO allotment status?",
+        answer: "Once the IPO goes live and closes for bidding, the allotment status will be processed by the designated registrar (such as Link Intime or KFin Technologies) and will be trackable via our IPO Allotment Directory."
+      }
+    ],
+    eventSchema: {
+      name: "Flipkart IPO (Expected)",
+      startDate: "2027-01-01",
+      eventStatus: "https://schema.org/EventScheduled",
+      eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+      location: "https://pkctechs.in",
+      description: "Information tracking the upcoming initial public offering (IPO) of Flipkart. Official parameters including price band and lot sizes are pending SEBI filing.",
+      organizer: "Flipkart"
+    }
   }
 ];
 

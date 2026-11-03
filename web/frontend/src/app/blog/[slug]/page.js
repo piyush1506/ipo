@@ -113,6 +113,37 @@ export default async function BlogPostPage({ params }) {
     ],
   };
 
+  const faqSchema = post.faqs && post.faqs.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: post.faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  } : null;
+
+  const eventSchema = post.eventSchema ? {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: post.eventSchema.name,
+    startDate: post.eventSchema.startDate,
+    eventStatus: post.eventSchema.eventStatus || 'https://schema.org/EventScheduled',
+    eventAttendanceMode: post.eventSchema.eventAttendanceMode || 'https://schema.org/OnlineEventAttendanceMode',
+    location: {
+      '@type': 'VirtualLocation',
+      url: post.eventSchema.location || baseUrl,
+    },
+    description: post.eventSchema.description,
+    organizer: {
+      '@type': 'Organization',
+      name: post.eventSchema.organizer,
+    },
+  } : null;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
       <Navbar />
@@ -129,6 +160,22 @@ export default async function BlogPostPage({ params }) {
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
+      {faqSchema && (
+        <Script
+          id="faq-schema"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
+      {eventSchema && (
+        <Script
+          id="event-schema"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema) }}
+        />
+      )}
 
       <main className="max-w-[1100px] mx-auto px-5 sm:px-6 py-8 sm:py-10 w-full flex-1">
         {/* Breadcrumb Navigation */}
@@ -201,6 +248,26 @@ export default async function BlogPostPage({ params }) {
                 </div>
               </section>
             ))}
+
+            {post.faqs && post.faqs.length > 0 && (
+              <section className="pt-6 border-t border-slate-200">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <span>❓</span> Frequently Asked Questions
+                </h2>
+                <div className="space-y-4">
+                  {post.faqs.map((faq, idx) => (
+                    <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
+                      <h3 className="text-sm font-bold text-slate-900 mb-2">
+                        {faq.question}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Callout Box */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-xs sm:text-sm text-slate-600 space-y-2 mt-8">

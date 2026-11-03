@@ -430,6 +430,8 @@ export const FALLBACK_IPOS = [
   },
   {
     "ipoId": "flipkart-limited-ipo",
+    "aboutCompany": "Flipkart, backed by Walmart, is in Pre-DRHP status preparing for its public listing on NSE and BSE. Official issue dates, price band, and lot sizes are pending SEBI filing and are strictly To Be Announced (TBA).",
+    "analysisArticleSlug": "flipkart-ipo-date-price-band-valuation-updates",
     "Symbol": "FLIPKART",
     "companyName": "Flipkart IPO",
     "ipoName": "Flipkart IPO",
